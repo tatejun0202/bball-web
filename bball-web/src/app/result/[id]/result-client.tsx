@@ -132,7 +132,7 @@ export default function ResultClientV2({ sessionId }: { sessionId: number }) {
 
   return (
    <main className="page-fit">
-      <div className="fit-scroll" style={{ padding: 16, paddingBottom: 100 }}>
+      <div  style={{ padding: 16, paddingBottom: 60 }}>
         {/* 日付 & タイトル */}
         <div style={{ fontSize: 15, fontWeight: 400, color: '#9aa' }}>{dateLabel}</div>
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>

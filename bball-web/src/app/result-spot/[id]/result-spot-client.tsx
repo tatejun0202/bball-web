@@ -53,7 +53,7 @@ export default function ResultSpotClient({ sessionId }: { sessionId: number }) {
 
   return (
     <main className="page-fit">
-      <div className="fit-scroll" style={{ padding: 16, paddingBottom: 100 }}>
+      <div  style={{ padding: 16, paddingBottom: 60 }}>
         {/* 日付 & タイトル */}
         <div style={{ fontSize: 15, fontWeight: 400 }}>{dateLabel}</div>
         <div style={{ fontSize: 18, fontWeight: 700 }}>{session?.note ?? 'Session'}</div>
@@ -99,7 +99,7 @@ export default function ResultSpotClient({ sessionId }: { sessionId: number }) {
 
       {/* Shot chart（上下反転ON） */}
         <h3 style={{ marginTop: 10, fontWeight: 700, textAlign: 'center', color: '#bbb' }}>Shot chart</h3>
-        <Court width={360} activeId={activeId} onSelect={setActiveId} flipY />
+        <Court width={340} activeId={activeId} onSelect={setActiveId} flipY />
 
         {/* 下部のスポットサマリ */}
         <div style={{ marginTop: 10, textAlign: 'center', color:'#bbb', fontSize:12 }}>
