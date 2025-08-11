@@ -90,26 +90,9 @@ export default function HistoryScreenV2() {
     <main className="page-fit" style={{ padding: 0 }}>
       {/* タイトルヘッダー */}
       <div style={{
-        padding:'16px 16px 12px 16px', 
-        display:'flex', 
-        justifyContent:'space-between', 
-        alignItems:'center'
+        padding:'16px 16px 12px 16px'
       }}>
         <div style={{ fontSize:24, fontWeight:800 }}>Play Histories</div>
-        <button
-          type="button"
-          onClick={onNewSession}
-          style={{ 
-            color:'#0ea5e9', 
-            background:'none', 
-            border:'none', 
-            cursor:'pointer', 
-            fontWeight:800,
-            fontSize: 14
-          }}
-        >
-          New Session ▶
-        </button>
       </div>
 
       {/* スクロール領域 */}
@@ -179,6 +162,27 @@ export default function HistoryScreenV2() {
           )}
         </ul>
       </div>
+      <button
+        onClick={onNewSession}
+        style={{
+          position: 'fixed',
+          bottom: 60, // フッター分の高さを考慮
+          right: 20,
+          width: 60,
+          height: 60,
+          borderRadius: '50%',
+          background: '#0ea5e9',
+          border: 'none',
+          color: '#fff',
+          fontSize: 24,
+          fontWeight: 700,
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(14, 165, 233, 0.4)',
+          zIndex: 10
+        }}
+      >
+        +
+      </button>
     </main>
   )
 }

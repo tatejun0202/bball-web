@@ -124,7 +124,7 @@ export default function ResultClientV2({ sessionId }: { sessionId: number }) {
   }
 
   return (
-    <main className="page-fit" style={{ padding: 16, paddingBottom: 80 }}>
+    <main className="page-fit" style={{ padding: 16, paddingBottom: 60 }}>
       {/* 日付 & タイトル */}
       <div style={{ fontSize: 15, fontWeight: 400, color: '#9aa' }}>{dateLabel}</div>
       <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
@@ -168,60 +168,6 @@ export default function ResultClientV2({ sessionId }: { sessionId: number }) {
           />
         </div>
       </section>
-
-      {/* 記録方式の統計 */}
-      {(summary.fixed.attempts > 0 || summary.free.attempts > 0) && (
-        <section style={{ marginBottom: 16 }}>
-          <h4 style={{ 
-            fontSize: 14, 
-            fontWeight: 600, 
-            color: '#ddd', 
-            marginBottom: 8 
-          }}>
-            記録方式別
-          </h4>
-          <div style={{ 
-            display: 'flex', 
-            gap: 8, 
-            fontSize: 11,
-            color: '#9aa',
-            flexWrap: 'wrap'
-          }}>
-            {summary.fixed.attempts > 0 && (
-              <div style={{ 
-                padding: '4px 8px', 
-                background: '#1f2937', 
-                borderRadius: 4,
-                border: '1px solid #374151',
-                flex: '1 1 auto',
-                minWidth: 0
-              }}>
-                <span>📍 固定: </span>
-                <span style={{ color: '#ddd', fontWeight: 600 }}>
-                  {summary.fixed.makes}/{summary.fixed.attempts} 
-                  ({summary.fixed.percentage.toFixed(1)}%)
-                </span>
-              </div>
-            )}
-            {summary.free.attempts > 0 && (
-              <div style={{ 
-                padding: '4px 8px', 
-                background: '#1f2937', 
-                borderRadius: 4,
-                border: '1px solid #374151',
-                flex: '1 1 auto',
-                minWidth: 0
-              }}>
-                <span>🎯 自由: </span>
-                <span style={{ color: '#ddd', fontWeight: 600 }}>
-                  {summary.free.makes}/{summary.free.attempts} 
-                  ({summary.free.percentage.toFixed(1)}%)
-                </span>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
 
       {/* Shot chart */}
       <h3 style={{ 

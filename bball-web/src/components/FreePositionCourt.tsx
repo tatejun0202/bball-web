@@ -254,20 +254,23 @@ export default function FreePositionCourt({
       </div>
 
       {/* 選択中位置の情報 */}
-      {selectedPosition && (
-        <div style={{
-          marginTop: 8,
-          fontSize: 16,
-          fontWeight: 700,
-          color: '#ddd',
-          textAlign: 'center'
+      <div style={{
+        marginTop: 8,
+        fontSize: 16,
+        fontWeight: 700,
+        color: selectedPosition ? '#ddd' : 'transparent',
+        textAlign: 'center',
+        minHeight: 24, // 固定高さで下の要素のズレを防ぐ
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
         }}>
-          {selectedPosition.type === 'fixed' 
+        {selectedPosition ? (
+            selectedPosition.type === 'fixed' 
             ? selectedPosition.label 
             : getAreaName(selectedPosition.x, selectedPosition.y)
-          }
-        </div>
-      )}
+        ) : 'エリアを選択してください'}
+      </div>
 
       <style jsx>{`
         @keyframes pulse {
