@@ -1,4 +1,4 @@
-// src/app/settings/page.tsx
+// src/app/settings/page.tsx (スクロール修正版)
 'use client'
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { db } from '@/db/dexie'
@@ -31,7 +31,7 @@ export default function SettingsPage() {
     }
   }
 
-  // データエクスポート機能（準備中）
+  // データエクスポート機能
   const handleExportData = async () => {
     try {
       const sessions = await db.sessions.toArray()
@@ -63,70 +63,72 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="page-fit" style={{ padding: 16 }}>
-      {/* タイトル */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>Settings</h1>
-      </div>
+    <main className="page-fit" style={{ padding: 0 }}>
+      <div className="fit-scroll" style={{ padding: 16, paddingBottom: 80 }}>
+        {/* タイトル */}
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>Settings</h1>
+        </div>
 
-      {/* 設定項目 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        
-        {/* バージョン情報 */}
-        <SettingSection title="アプリ情報">
-          <SettingItem
-            label="バージョン"
-            value="v2.0.0"
-          />
-          <SettingItem
-            label="ビルド日"
-            value="2025/08/11"
-          />
-        </SettingSection>
+        {/* 設定項目 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          
+          {/* バージョン情報 */}
+          <SettingSection title="アプリ情報">
+            <SettingItem
+              label="バージョン"
+              value="v2.0.0"
+            />
+            <SettingItem
+              label="ビルド日"
+              value="2025/08/11"
+            />
+          </SettingSection>
 
-        {/* データ管理 */}
-        <SettingSection title="データ管理">
-          <SettingButton
-            label="データエクスポート"
-            description="練習データをJSON形式でエクスポート"
-            onClick={handleExportData}
-          />
-          <SettingButton
-            label="履歴データ全削除"
-            description="全てのセッション・練習記録を削除"
-            danger
-            onClick={handleDeleteAllHistory}
-          />
-        </SettingSection>
+          {/* データ管理 */}
+          <SettingSection title="データ管理">
+            <SettingButton
+              label="データエクスポート"
+              description="練習データをJSON形式でエクスポート"
+              onClick={handleExportData}
+            />
+            <SettingButton
+              label="履歴データ全削除"
+              description="全てのセッション・練習記録を削除"
+              danger
+              onClick={handleDeleteAllHistory}
+            />
+          </SettingSection>
 
-        {/* 表示設定 */}
-        <SettingSection title="表示設定">
-          <SettingItem
-            label="ダークモード"
-            value="有効"
-          />
-          <SettingItem
-            label="言語"
-            value="日本語"
-          />
-        </SettingSection>
+          {/* 表示設定 */}
+          <SettingSection title="表示設定">
+            <SettingItem
+              label="ダークモード"
+              value="有効"
+            />
+            <SettingItem
+              label="言語"
+              value="日本語"
+            />
+          </SettingSection>
 
-        {/* 開発者情報 */}
-        <SettingSection title="その他">
-          <SettingItem
-            label="開発者"
-            value="BBall Team"
-          />
-          <SettingButton
-            label="フィードバック"
-            description="改善要望やバグ報告"
-            onClick={() => {
-              // TODO: フィードバック機能
-              alert('フィードバック機能は準備中です')
-            }}
-          />
-        </SettingSection>
+          {/* 開発者情報 */}
+          <SettingSection title="その他">
+            <SettingItem
+              label="開発者"
+              value="BBall Team"
+            />
+            <SettingButton
+              label="フィードバック"
+              description="改善要望やバグ報告"
+              onClick={() => {
+                // TODO: フィードバック機能
+                alert('フィードバック機能は準備中です')
+              }}
+            />
+          </SettingSection>
 
+        </div>
       </div>
     </main>
   )
