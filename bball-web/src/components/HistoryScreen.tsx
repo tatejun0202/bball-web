@@ -1,9 +1,10 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { listSessions, getSessionSummary, startSession, endSession } from '@/db/repositories'
 import type { Session } from '@/db/dexie'
+import type { Route } from 'next'
 
 const fmtDate = (ts?: number) => {
   if (!ts) return '-'
@@ -12,20 +13,26 @@ const fmtDate = (ts?: number) => {
 }
 const mins = (s:Session) => Math.max(1, Math.floor(((s.endedAt ?? Date.now()) - s.startedAt)/60000))
 
+
 export default function HistoryScreen() {
   const router = useRouter()
   const [items, setItems] = useState<Array<Session & { att:number; mk:number; fg:number }>>([])
-
-  useEffect(() => { load() }, [])
-  async function load() {
+  const load = useCallback(async () => {
     const ss = await listSessions()
-    const out: typeof items = []
+    const out: Array<Session & { att:number; mk:number; fg:number }> = []
     for (const s of ss) {
       const sum = await getSessionSummary(s.id!)
-      out.push({ ...s, att: sum.total.attempts, mk: sum.total.makes, fg: sum.total.attempts ? sum.total.makes/sum.total.attempts : 0 })
+      out.push({
+        ...s,
+        att: sum.total.attempts,
+        mk: sum.total.makes,
+        fg: sum.total.attempts ? sum.total.makes / sum.total.attempts : 0
+      })
     }
     setItems(out)
-  }
+  }, [])
+
+  useEffect(() => { void load() }, [load])
 
   async function onNewSession() {
     const latest = items[0]
@@ -56,7 +63,7 @@ export default function HistoryScreen() {
       <div className="fit-scroll" style={{ padding:'0 16px' }}>
         <ul>
           {items.map(s => {
-            const href = !s.endedAt ? '/session' : (`/result/${s.id}` as any)
+            const href: Route = !s.endedAt ? '/session' : (`/result/${String(s.id)}` as Route)
             return (
               <li key={s.id} style={{ borderBottom: '1px solid #2a2a2a' }}>
                 <Link href={href} style={{ display:'block', padding: '12px 4px', color: 'inherit', textDecoration: 'none' }}>

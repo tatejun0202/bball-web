@@ -9,6 +9,7 @@ import {
 } from '@/db/repositories'
 import type { Zone } from '@/db/dexie'
 import { useEdgeSwipeToHistory } from '@/hooks/useEdgeSwipeToHistory'
+  import type { NewDrillResult } from '@/db/types'
 
 
 /** 入力の正規化: 数字以外を除去 → 空なら ''、それ以外は整数文字に */
@@ -68,11 +69,15 @@ export default function SessionPage() {
     [sessionId, zoneId, attempts, makes]
   )
 
+
+
   async function save() {
     if (!canSave || !sessionId || !zoneId) return
-    await addDrillResult({ sessionId, zoneId, spotId: activeSpotId, attempts, makes } as any)
-    setAttemptsStr('') // 入力欄を空に戻す（0固定にしない）
-    setMakesStr('')
+    const payload: NewDrillResult = {
+      sessionId, zoneId, spotId: activeSpotId, attempts, makes
+    }
+    await addDrillResult(payload)
+    setAttemptsStr(''); setMakesStr('')
   }
   
 

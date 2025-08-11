@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
 import Court from '@/components/CourtImageSpots'
 import { SPOTS } from '@/constants/spots'
 import { getSession, getSessionSummary, getSessionSpotBreakdown } from '@/db/repositories'
@@ -11,25 +10,10 @@ const pct = (n: number) => (n * 100).toFixed(1)
 
 export default function ResultClient({ sessionId }: { sessionId: number }) {
   useEdgeSwipeToHistory({ edgeStartRatio: 1/3, threshold: 80, maxPull: 160, flingMs: 220 })
-  const [summaryTxt, setSummaryTxt] = useState('集計中…')
   const [spotStats, setSpotStats] = useState<Record<number, { att: number, mk: number, fg: number }>>({})
   const [activeId, setActiveId] = useState<number | undefined>()
   const [session, setSession] = useState<Session | null>(null)
   useEffect(() => { (async()=> setSession(await getSession(sessionId) ?? null))() }, [sessionId])
-
-
-
-  useEffect(() => {
-    (async () => {
-      const s = await getSessionSummary(sessionId)
-      setSummaryTxt(`試投:${s.total.attempts} 成功:${s.total.makes} FG:${pct(s.fg)}% 3FG:${pct(s.p3)}% eFG:${pct(s.efg)}%`)
-      const rows = await getSessionSpotBreakdown(sessionId)
-      const map: Record<number, { att: number, mk: number, fg: number }> = {}
-      for (const r of rows) map[r.id] = { att: r.att, mk: r.mk, fg: r.fg }
-      setSpotStats(map)
-      setActiveId(rows.find(r => r.att > 0)?.id ?? SPOTS[0].id)
-    })().catch(console.error)
-  }, [sessionId])
 
   // Sessionの startedAt/endedAt を履歴から引いて来たい場合は repositories にAPIがあればそれを使う
   useEffect(() => {

@@ -1,6 +1,7 @@
-import { db, type DrillResult, type Zone } from './dexie'
+import { db, type Zone } from './dexie'
 import Dexie from 'dexie'
 import { SPOTS } from '@/constants/spots'
+import type { NewDrillResult } from './types'
 
 export async function startSession(note?: string) {
   return db.sessions.add({ startedAt: Date.now(), note })
@@ -26,18 +27,21 @@ export async function listZones(): Promise<Zone[]> {
   return db.zones.orderBy('orderIndex').toArray()
 }
 
-// 初回起動で 2P/3P ゾーンを自動作成
 export async function ensureSeedZones() {
   const count = await db.zones.count()
   if (count > 0) return
-  await db.zones.bulkAdd([
-    { orderIndex: 1, is3pt: false, name: '2P' } as any,
-    { orderIndex: 2, is3pt: true,  name: '3P' } as any,
-  ])
+  const rows: Omit<Zone, 'id'>[] = [
+    { orderIndex: 1, is3pt: false, name: '2P' },
+    { orderIndex: 2, is3pt: true,  name: '3P' }
+  ]
+  await db.zones.bulkAdd(rows)
 }
 
-export async function addDrillResult(input: Omit<DrillResult,'id'|'createdAt'>) {
-  return db.drillResults.add({ ...input, createdAt: Date.now() })
+
+export async function addDrillResult(input: NewDrillResult) {
+  // Dexieのテーブル型と一致していればそのままでOK
+  return db.drillResults.add(input as unknown as Parameters<typeof db.drillResults.add>[0])
+  // ↑ テーブル型が合っていれば「as unknown as …」は外してOK
 }
 export async function getSessionSummary(sessionId: number) {
   const rows = await db.drillResults.where('sessionId').equals(sessionId).toArray()

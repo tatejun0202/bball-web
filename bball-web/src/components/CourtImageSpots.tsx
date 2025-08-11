@@ -1,6 +1,7 @@
 'use client'
 import { useMemo } from 'react'
 import { SPOTS } from '@/constants/spots'
+import Image from 'next/image'
 
 type Props = {
   width?: number
@@ -13,28 +14,18 @@ const IMG_W = 1095
 const IMG_H = 768
 const RATIO = IMG_H / IMG_W
 
-export default function CourtImageSpots({ width = 360, activeId, onSelect, flipY }: Props) {
+export default function CourtImageSpots({ width = 340, activeId, onSelect, flipY = false }: Props) {
   const height = useMemo(() => Math.round(width * RATIO), [width])
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width,
-        height,
-        margin: '12px auto',
-        border: '1px solid #3a3a3a',
-        borderRadius: 8,
-        overflow: 'hidden',
-        transform: flipY ? 'scaleY(-1)' : undefined,      // ★反転
-        transformOrigin: 'center',
-      }}
-    >
-      <img
+<div style={{ position:'relative', width: '100%', aspectRatio: '360/640' }}>
+      <Image
         src="/court.png"
         alt="court"
-        draggable={false}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }}
+        fill
+        priority
+        sizes="(max-width: 430px) 100vw, 430px"
+        style={{ objectFit:'cover' }}
       />
       {SPOTS.map(s => (
       <button

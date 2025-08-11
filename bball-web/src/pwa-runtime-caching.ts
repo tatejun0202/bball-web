@@ -1,7 +1,15 @@
+type Handler = 'NetworkFirst' | 'StaleWhileRevalidate' | 'CacheFirst'
+type RuntimeCaching = {
+  urlPattern:
+    | RegExp
+    | ((ctx: { request: Request; url: URL }) => boolean)
+  handler: Handler
+  options?: Record<string, unknown>
+}
 
-const runtimeCaching: any[] = [
+const runtimeCaching: RuntimeCaching[] = [
   {
-    urlPattern: ({ request }: { request: Request }) => request.mode === 'navigate',
+    urlPattern: ({ request }) => request.mode === 'navigate',
     handler: 'NetworkFirst',
     options: {
       cacheName: 'pages',
@@ -10,7 +18,7 @@ const runtimeCaching: any[] = [
     }
   },
   {
-    urlPattern: ({ request }: { request: Request }) =>
+    urlPattern: ({ request }) =>
       ['style', 'script', 'worker'].includes(request.destination),
     handler: 'StaleWhileRevalidate',
     options: {
@@ -19,7 +27,7 @@ const runtimeCaching: any[] = [
     }
   },
   {
-    urlPattern: ({ request, url }: { request: Request; url: URL }) =>
+    urlPattern: ({ request, url }) =>
       request.destination === 'image' || url.pathname.startsWith('/images/'),
     handler: 'CacheFirst',
     options: {
@@ -28,7 +36,7 @@ const runtimeCaching: any[] = [
     }
   },
   {
-    urlPattern: ({ url }: { url: URL }) => url.pathname.startsWith('/api/'),
+    urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
     handler: 'NetworkFirst',
     options: {
       cacheName: 'api',
