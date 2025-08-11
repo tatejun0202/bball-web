@@ -1,0 +1,27 @@
+# Node / Next
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Env
+.env*
+!.env.example
+
+# PWA 生成物（next-pwa がビルド時に上書きする）
+public/workbox-*.js
+public/sw.js
+public/sw.js.map
