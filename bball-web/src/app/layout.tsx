@@ -1,6 +1,6 @@
-// server
 import './globals.css'
 import SwipeStage from '@/components/SwipeStage'
+import FooterNavigation from '@/components/FooterNavigation'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div id="app-viewport">
           <div id="app-phone" style={{ position:'relative', overflow:'hidden' }}>
             <SwipeStage>{children}</SwipeStage>
+            <FooterNavigation />
           </div>
         </div>
       </body>

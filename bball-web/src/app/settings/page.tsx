@@ -1,205 +1,235 @@
 // src/app/settings/page.tsx
 'use client'
-import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
-import type { Route } from 'next'
-import { listSessions, deleteSessionsCascade, clearAllHistory } from '@/db/repositories'
-import type { Session } from '@/db/dexie'
-
-function fmt(ts?: number) {
-  if (!ts) return '-'
-  const d = new Date(ts)
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
-}
+import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
+import { db } from '@/db/dexie'
 
 export default function SettingsPage() {
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [selected, setSelected] = useState<Record<number, boolean>>({})
+  useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 })
 
-  useEffect(() => {
-    ;(async () => {
-      const ss = await listSessions()
-      setSessions(ss)
-      setSelected({})
-    })().catch(console.error)
-  }, [])
+  // 全履歴削除機能
+  const handleDeleteAllHistory = async () => {
+    if (!confirm('全ての履歴データを削除しますか？\nこの操作は取り消せません。')) {
+      return
+    }
 
-  const allChecked = useMemo(() => {
-    if (sessions.length === 0) return false
-    return sessions.every(s => selected[s.id!] === true)
-  }, [sessions, selected])
+    // 二重確認
+    if (!confirm('本当に削除しますか？\n全てのセッション、練習記録が削除されます。')) {
+      return
+    }
 
-  const selectedIds = useMemo(
-    () => sessions.filter(s => selected[s.id!]).map(s => s.id!) as number[],
-    [sessions, selected]
-  )
-
-  async function refresh() {
-    const ss = await listSessions()
-    setSessions(ss)
-    setSelected({})
+    try {
+      // 全テーブルのデータを削除
+      await db.transaction('rw', [db.sessions, db.drillResults], async () => {
+        await db.sessions.clear()
+        await db.drillResults.clear()
+      })
+      
+      alert('全ての履歴データを削除しました。')
+    } catch (error) {
+      console.error('データ削除エラー:', error)
+      alert('データの削除に失敗しました。')
+    }
   }
 
-  async function onDeleteSelected() {
-    if (selectedIds.length === 0) return
-    if (!window.confirm(`${selectedIds.length}件の履歴を削除します。よろしいですか？`)) return
-    await deleteSessionsCascade(selectedIds)
-    await refresh()
-    alert('削除しました')
-  }
-
-  async function onDeleteAll() {
-    if (sessions.length === 0) return
-    if (!window.confirm('すべての履歴を削除します。この操作は取り消せません。')) return
-    await clearAllHistory()
-    await refresh()
-    alert('全削除しました')
+  // データエクスポート機能（準備中）
+  const handleExportData = async () => {
+    try {
+      const sessions = await db.sessions.toArray()
+      const drillResults = await db.drillResults.toArray()
+      
+      const exportData = {
+        version: '2.0.0',
+        exportDate: new Date().toISOString(),
+        sessions,
+        drillResults
+      }
+      
+      const dataStr = JSON.stringify(exportData, null, 2)
+      const blob = new Blob([dataStr], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `bball-data-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('エクスポートエラー:', error)
+      alert('データのエクスポートに失敗しました。')
+    }
   }
 
   return (
-    <main style={{ padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800 }}>Settings</h1>
-        <Link href={'/history' as Route} style={{ color: '#9ecbff' }}>
-          ＜ Back
-        </Link>
+    <main className="page-fit" style={{ padding: 16 }}>
+      {/* タイトル */}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>Settings</h1>
       </div>
 
-      {/* 履歴の選択削除 */}
-      <section style={{ marginTop: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700 }}>Play Histories</h2>
-          <button
-            type="button"
+      {/* 設定項目 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        
+        {/* バージョン情報 */}
+        <SettingSection title="アプリ情報">
+          <SettingItem
+            label="バージョン"
+            value="v2.0.0"
+          />
+          <SettingItem
+            label="ビルド日"
+            value="2025/08/11"
+          />
+        </SettingSection>
+
+        {/* データ管理 */}
+        <SettingSection title="データ管理">
+          <SettingButton
+            label="データエクスポート"
+            description="練習データをJSON形式でエクスポート"
+            onClick={handleExportData}
+          />
+          <SettingButton
+            label="履歴データ全削除"
+            description="全てのセッション・練習記録を削除"
+            danger
+            onClick={handleDeleteAllHistory}
+          />
+        </SettingSection>
+
+        {/* 表示設定 */}
+        <SettingSection title="表示設定">
+          <SettingItem
+            label="ダークモード"
+            value="有効"
+          />
+          <SettingItem
+            label="言語"
+            value="日本語"
+          />
+        </SettingSection>
+
+        {/* 開発者情報 */}
+        <SettingSection title="その他">
+          <SettingItem
+            label="開発者"
+            value="BBall Team"
+          />
+          <SettingButton
+            label="フィードバック"
+            description="改善要望やバグ報告"
             onClick={() => {
-              if (allChecked) {
-                setSelected({})
-              } else {
-                const next: Record<number, boolean> = {}
-                for (const s of sessions) next[s.id!] = true
-                setSelected(next)
-              }
+              // TODO: フィードバック機能
+              alert('フィードバック機能は準備中です')
             }}
-            style={{
-              border: '1px solid #666',
-              background: 'none',
-              color: '#ddd',
-              borderRadius: 8,
-              padding: '6px 10px',
-              cursor: 'pointer',
-              // ★iOS対策
-              WebkitTapHighlightColor: 'transparent',
-              WebkitAppearance: 'none',
-              touchAction: 'manipulation'
-            }}
-          >
-            {allChecked ? 'Uncheck all' : 'Check all'}
-          </button>
+          />
+        </SettingSection>
 
-          <button
-            type="button"
-            onClick={onDeleteSelected}
-            disabled={selectedIds.length === 0}
-            style={{
-              marginLeft: 'auto',
-              border: '1px solid #e57373',
-              background: selectedIds.length ? '#7a2e2e' : '#3a2a2a',
-              color: '#ffd6d6',
-              borderRadius: 8,
-              padding: '6px 12px',
-              fontWeight: 700,
-              cursor: selectedIds.length ? 'pointer' : 'not-allowed',
-              // ★iOS対策
-              WebkitTapHighlightColor: 'transparent',
-              WebkitAppearance: 'none',
-              touchAction: 'manipulation'
-            }}
-          >
-            Delete selected
-          </button>
-        </div>
-
-        <ul style={{ marginTop: 10, display: 'grid', gap: 6 }}>
-          {sessions.map(s => {
-            const cid = `chk-${s.id}`
-            const href: Route = `/result/${String(s.id)}` as Route
-            return (
-              <li
-                key={s.id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '24px 1fr auto',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '10px 6px',
-                  borderBottom: '1px solid #2a2a2a'
-                }}
-              >
-                <input
-                  id={cid}
-                  type="checkbox"
-                  checked={Boolean(selected[s.id!])}
-                  onChange={e => setSelected(prev => ({ ...prev, [s.id!]: e.target.checked }))}
-                />
-                <label htmlFor={cid} style={{ cursor: 'pointer' }}>
-                  <div style={{ fontWeight: 700 }}>
-                    {s.note || 'Session'}
-                    {!s.endedAt && (
-                      <span
-                        style={{
-                          marginLeft: 8,
-                          fontSize: 11,
-                          fontWeight: 800,
-                          color: '#fff',
-                          background: '#d22',
-                          padding: '2px 6px',
-                          borderRadius: 999
-                        }}
-                      >
-                        current
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>
-                    {fmt(s.startedAt)}
-                    {s.endedAt ? ` 〜 ${fmt(s.endedAt)}` : ''}
-                  </div>
-                </label>
-                <Link href={href} style={{ color: '#9ecbff', whiteSpace: 'nowrap' }}>
-                  View ›
-                </Link>
-              </li>
-            )
-          })}
-          {sessions.length === 0 && <li style={{ padding: '16px 4px', color: '#9aa' }}>履歴はありません</li>}
-        </ul>
-      </section>
-
-      {/* Danger Zone */}
-      <section style={{ marginTop: 24 }}>
-        <div style={{ fontSize: 14, color: '#f5bdbd', marginBottom: 8, fontWeight: 700 }}>Danger Zone</div>
-        <button
-          type="button"
-          onClick={onDeleteAll}
-          disabled={sessions.length === 0}
-          style={{
-            width: '100%',
-            border: '1px solid #e57373',
-            background: sessions.length ? '#7a2e2e' : '#3a2a2a',
-            color: '#ffd6d6',
-            borderRadius: 10,
-            padding: '10px 14px',
-            fontWeight: 800,
-            cursor: sessions.length ? 'pointer' : 'not-allowed',
-            // ★iOS対策
-            WebkitTapHighlightColor: 'transparent',
-            WebkitAppearance: 'none',
-            touchAction: 'manipulation'
-          }}
-        >
-          Delete all histories
-        </button>
-      </section>
+      </div>
     </main>
+  )
+}
+
+function SettingSection({ 
+  title, 
+  children 
+}: { 
+  title: string
+  children: React.ReactNode 
+}) {
+  return (
+    <div>
+      <h2 style={{
+        fontSize: 16,
+        fontWeight: 600,
+        color: '#9aa',
+        marginBottom: 12,
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        {title}
+      </h2>
+      <div style={{
+        background: '#252525',
+        borderRadius: 8,
+        border: '1px solid #374151',
+        overflow: 'hidden'
+      }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function SettingItem({ 
+  label, 
+  value 
+}: { 
+  label: string
+  value: string 
+}) {
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '16px 20px',
+      borderBottom: '1px solid #374151'
+    }}>
+      <span style={{ color: '#ddd', fontSize: 15 }}>{label}</span>
+      <span style={{ color: '#9aa', fontSize: 14 }}>{value}</span>
+    </div>
+  )
+}
+
+function SettingButton({ 
+  label, 
+  description, 
+  danger = false,
+  onClick 
+}: { 
+  label: string
+  description?: string
+  danger?: boolean
+  onClick: () => void 
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: '16px 20px',
+        background: 'none',
+        border: 'none',
+        borderBottom: '1px solid #374151',
+        width: '100%',
+        cursor: 'pointer',
+        textAlign: 'left',
+        WebkitTapHighlightColor: 'transparent',
+        WebkitAppearance: 'none',
+        touchAction: 'manipulation'
+      }}
+    >
+      <span style={{ 
+        color: danger ? '#ef4444' : '#ddd', 
+        fontSize: 15,
+        fontWeight: 500
+      }}>
+        {label}
+      </span>
+      {description && (
+        <span style={{ 
+          color: '#9aa', 
+          fontSize: 13, 
+          marginTop: 4 
+        }}>
+          {description}
+        </span>
+      )}
+    </button>
   )
 }

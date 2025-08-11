@@ -1,8 +1,10 @@
+// src/components/HistoryScreen.tsx (V2版)
 'use client'
 import Link from 'next/link'
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { listSessions, getSessionSummary, startSession, endSession } from '@/db/repositories'
+import { updateSessionMode } from '@/db/repositories-v2'
 import type { Session } from '@/db/dexie'
 
 const fmtDate = (ts?: number) => {
@@ -12,10 +14,10 @@ const fmtDate = (ts?: number) => {
 }
 const mins = (s:Session) => Math.max(1, Math.floor(((s.endedAt ?? Date.now()) - s.startedAt)/60000))
 
-
-export default function HistoryScreen() {
+export default function HistoryScreenV2() {
   const router = useRouter()
   const [items, setItems] = useState<Array<Session & { att:number; mk:number; fg:number }>>([])
+  
   const load = useCallback(async () => {
     const ss = await listSessions()
     const out: Array<Session & { att:number; mk:number; fg:number }> = []
@@ -28,44 +30,83 @@ export default function HistoryScreen() {
         fg: sum.total.attempts ? sum.total.makes / sum.total.attempts : 0
       })
     }
-    setItems(out)
+    
+    // currentセッションを一番上に移動
+    const sorted = out.sort((a, b) => {
+      // currentセッション（endedAtがない）を優先
+      if (!a.endedAt && b.endedAt) return -1
+      if (a.endedAt && !b.endedAt) return 1
+      // 両方とも同じ状態なら日時で降順ソート
+      return b.startedAt - a.startedAt
+    })
+    
+    setItems(sorted)
   }, [])
 
   useEffect(() => { void load() }, [load])
 
   async function onNewSession() {
-    const latest = items[0]
-    if (latest && !latest.endedAt) await endSession(latest.id!)
-    await startSession('3Pシュート練習')
+    // 既存のアクティブセッションがあれば終了
+    const latest = items.find(item => !item.endedAt)
+    if (latest) {
+      await endSession(latest.id!)
+    }
+    
+    // セッション数を取得して新しいセッション名を生成
+    const sessionCount = items.length
+    const sessionTitle = `Session${sessionCount + 1}`
+    
+    const sessionId = await startSession(sessionTitle)
+    // デフォルトは自由配置モード
+    await updateSessionMode(sessionId, 'free')
+    
     router.replace('/session')
   }
 
-  // ★デバッグ用の関数
   function handleSessionClick(session: Session & { att:number; mk:number; fg:number }) {
-    console.log('Session clicked:', session)
-    console.log('endedAt:', session.endedAt)
-    console.log('Should go to:', !session.endedAt ? '/session' : `/result/${session.id}`)
-    
     if (!session.endedAt) {
       router.push('/session')
     } else {
-      router.push(`/result/${session.id}`)
+      // モード判別してResult画面を振り分け
+      const mode = session.mode || 'free' // デフォルトは自由配置
+      if (mode === 'spot') {
+        router.push(`/result-spot/${session.id}`)
+      } else {
+        router.push(`/result/${session.id}`)
+      }
+    }
+  }
+
+  // モード判別のアイコンとラベル
+  const getModeInfo = (mode?: string) => {
+    if (mode === 'spot') {
+      return { label: 'Spot', color: '#3b82f6' }
+    } else {
+      return { label: 'Free', color: '#10b981' }
     }
   }
 
   return (
     <main className="page-fit" style={{ padding: 0 }}>
-      {/* sticky ヘッダー（いつも一番上） */}
+      {/* タイトルヘッダー */}
       <div style={{
-        position:'sticky', top:0, zIndex:1,
-        background:'#1c1c1c', borderBottom:'1px solid #2a2a2a',
-        padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center'
+        padding:'16px 16px 12px 16px', 
+        display:'flex', 
+        justifyContent:'space-between', 
+        alignItems:'center'
       }}>
-        <div style={{ fontSize:18, fontWeight:800 }}>Play Histories</div>
+        <div style={{ fontSize:24, fontWeight:800 }}>Play Histories</div>
         <button
           type="button"
           onClick={onNewSession}
-          style={{ color:'#3aa8ff', background:'none', border:'none', cursor:'pointer', fontWeight:800 }}
+          style={{ 
+            color:'#0ea5e9', 
+            background:'none', 
+            border:'none', 
+            cursor:'pointer', 
+            fontWeight:800,
+            fontSize: 14
+          }}
         >
           New Session ▶
         </button>
@@ -75,9 +116,9 @@ export default function HistoryScreen() {
       <div className="fit-scroll" style={{ padding:'0 16px' }}>
         <ul>
           {items.map(s => {
+            const modeInfo = getModeInfo(s.mode)
             return (
               <li key={s.id} style={{ borderBottom: '1px solid #2a2a2a' }}>
-                {/* ★修正: Linkの代わりにbutton+clickハンドラーに変更 */}
                 <button
                   onClick={() => handleSessionClick(s)}
                   style={{ 
@@ -99,6 +140,19 @@ export default function HistoryScreen() {
                     <div>
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <div style={{ fontSize: 20, fontWeight: 800 }}>{s.note || 'Session'}</div>
+                        
+                        {/* モード表示バッジ */}
+                        <div style={{
+                          padding: '2px 8px',
+                          background: modeInfo.color,
+                          color: '#fff',
+                          borderRadius: 12,
+                          fontSize: 10,
+                          fontWeight: 600
+                        }}>
+                          {modeInfo.label}
+                        </div>
+                        
                         {!s.endedAt && (
                           <span style={{
                             fontSize: 11, fontWeight: 800,

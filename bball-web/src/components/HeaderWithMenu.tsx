@@ -40,6 +40,7 @@ export default function HeaderWithMenu() {
             <ul style={{ display:'grid', gap:22, marginTop:8, fontWeight:700, fontSize:24 }}>
               <li><Link href="/session" onClick={()=>setOpen(false)} style={{ color:'inherit', textDecoration:'none' }}>Session</Link></li>
               <li><Link href="/history" onClick={()=>setOpen(false)} style={{ color:'inherit', textDecoration:'none' }}>History</Link></li>
+              <li><Link href="/stats" onClick={()=>setOpen(false)} style={{ color:'inherit', textDecoration:'none' }}>Stats</Link></li>
               <li><Link href="/settings" onClick={()=>setOpen(false)} style={{ color:'inherit', textDecoration:'none' }}>Setting</Link></li>
             </ul>
             <button

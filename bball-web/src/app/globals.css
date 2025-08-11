@@ -48,6 +48,13 @@ body {
   background: #1c1c1c;
 }
 
+main.page-fit {
+  height: calc(100dvh - 60px); /* 60px ≒ フッター高のみ */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 
 /* ---- Court image overlay ---- */
 .court-wrap {
@@ -86,15 +93,6 @@ body {
 .spot-dot.active {
   background: #ff914d; /* オレンジ（選択中） */
   box-shadow: 0 0 0 3px rgba(255,145,77,.25);
-}
-
-
-/* 各ページの main は内部で折り返し、基本スクロール無し */
-main.page-fit {
-  height: calc(100dvh - 48px); /* 48px ≒ ヘッダー高。違っていたら調整 */
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 /* スクロールが出そうな領域は必要最小限で only-y */
