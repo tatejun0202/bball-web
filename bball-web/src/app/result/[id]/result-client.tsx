@@ -13,6 +13,23 @@ export default function ResultClient({ sessionId }: { sessionId: number }) {
   const [spotStats, setSpotStats] = useState<Record<number, { att: number, mk: number, fg: number }>>({})
   const [activeId, setActiveId] = useState<number | undefined>()
   const [session, setSession] = useState<Session | null>(null)
+  const [sum, setSum] = useState<any>(null)
+  const [spots, setSpots] = useState<any[]>([])
+  useEffect(() => {
+    if (!Number.isFinite(sessionId)) {
+      console.warn('ResultClient: invalid sessionId', sessionId) // ★
+      return
+    }
+    ;(async () => {
+      const s = await getSessionSummary(sessionId)
+      const sp = await getSessionSpotBreakdown(sessionId)
+      setSum(s)
+      setSpots(sp)
+      // ★ 念のためログ。本番だけ 0 ならここで rows=0 が見えるはず
+      console.log('Result loaded', { sessionId, summary: s, spots: sp })
+    })().catch(console.error)
+  }, [sessionId])
+  
   useEffect(() => { (async()=> setSession(await getSession(sessionId) ?? null))() }, [sessionId])
 
   // Sessionの startedAt/endedAt を履歴から引いて来たい場合は repositories にAPIがあればそれを使う
