@@ -86,7 +86,11 @@ export default function SettingsPage() {
               color: '#ddd',
               borderRadius: 8,
               padding: '6px 10px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              // ★iOS対策
+              WebkitTapHighlightColor: 'transparent',
+              WebkitAppearance: 'none',
+              touchAction: 'manipulation'
             }}
           >
             {allChecked ? 'Uncheck all' : 'Check all'}
@@ -104,7 +108,11 @@ export default function SettingsPage() {
               borderRadius: 8,
               padding: '6px 12px',
               fontWeight: 700,
-              cursor: selectedIds.length ? 'pointer' : 'not-allowed'
+              cursor: selectedIds.length ? 'pointer' : 'not-allowed',
+              // ★iOS対策
+              WebkitTapHighlightColor: 'transparent',
+              WebkitAppearance: 'none',
+              touchAction: 'manipulation'
             }}
           >
             Delete selected
@@ -182,7 +190,11 @@ export default function SettingsPage() {
             borderRadius: 10,
             padding: '10px 14px',
             fontWeight: 800,
-            cursor: sessions.length ? 'pointer' : 'not-allowed'
+            cursor: sessions.length ? 'pointer' : 'not-allowed',
+            // ★iOS対策
+            WebkitTapHighlightColor: 'transparent',
+            WebkitAppearance: 'none',
+            touchAction: 'manipulation'
           }}
         >
           Delete all histories
