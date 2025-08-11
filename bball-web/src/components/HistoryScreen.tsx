@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { listSessions, getSessionSummary, startSession, endSession } from '@/db/repositories'
 import type { Session } from '@/db/dexie'
-import type { Route } from 'next'
 
 const fmtDate = (ts?: number) => {
   if (!ts) return '-'
@@ -41,6 +40,19 @@ export default function HistoryScreen() {
     router.replace('/session')
   }
 
+  // ★デバッグ用の関数
+  function handleSessionClick(session: Session & { att:number; mk:number; fg:number }) {
+    console.log('Session clicked:', session)
+    console.log('endedAt:', session.endedAt)
+    console.log('Should go to:', !session.endedAt ? '/session' : `/result/${session.id}`)
+    
+    if (!session.endedAt) {
+      router.push('/session')
+    } else {
+      router.push(`/result/${session.id}`)
+    }
+  }
+
   return (
     <main className="page-fit" style={{ padding: 0 }}>
       {/* sticky ヘッダー（いつも一番上） */}
@@ -63,10 +75,26 @@ export default function HistoryScreen() {
       <div className="fit-scroll" style={{ padding:'0 16px' }}>
         <ul>
           {items.map(s => {
-            const href: Route = !s.endedAt ? '/session' : (`/result/${String(s.id)}` as Route)
             return (
               <li key={s.id} style={{ borderBottom: '1px solid #2a2a2a' }}>
-                <Link href={href} style={{ display:'block', padding: '12px 4px', color: 'inherit', textDecoration: 'none' }}>
+                {/* ★修正: Linkの代わりにbutton+clickハンドラーに変更 */}
+                <button
+                  onClick={() => handleSessionClick(s)}
+                  style={{ 
+                    display:'block', 
+                    padding: '12px 4px', 
+                    color: 'inherit', 
+                    textDecoration: 'none',
+                    background: 'none',
+                    border: 'none',
+                    width: '100%',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                    WebkitAppearance: 'none',
+                    touchAction: 'manipulation'
+                  }}
+                >
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <div>
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -88,7 +116,7 @@ export default function HistoryScreen() {
                     <div style={{ fontSize: 22 }}>›</div>
                   </div>
                   <div style={{ marginTop: 6, fontSize: 12, color:'#9aa' }}>{fmtDate(s.startedAt)}</div>
-                </Link>
+                </button>
               </li>
             )
           })}
