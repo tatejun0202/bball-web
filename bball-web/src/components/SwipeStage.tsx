@@ -23,7 +23,10 @@ export default function SwipeStage({ children }: { children: React.ReactNode }) 
       {/* 左：本物のHistory（初期は画面の左に隠す） */}
       <div id="swipe-history"
            style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', background:'#1c1c1c',
-                    transform:'translateX(-100%)' }}>
+                    transform:'translateX(-100%)', overflow:'hidden' }}>
+        {/* ★修正: ヘッダーも含む */}
+        <HeaderWithMenu />
+        <div style={{ borderBottom:'1px solid #2a2a2a' }} />
         <HistoryScreen/>
       </div>
 

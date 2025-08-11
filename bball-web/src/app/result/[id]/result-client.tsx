@@ -13,21 +13,31 @@ export default function ResultClient({ sessionId }: { sessionId: number }) {
   const [spotStats, setSpotStats] = useState<Record<number, { att: number, mk: number, fg: number }>>({})
   const [activeId, setActiveId] = useState<number | undefined>()
   const [session, setSession] = useState<Session | null>(null)
-  useEffect(() => { (async()=> setSession(await getSession(sessionId) ?? null))() }, [sessionId])
 
-  // Sessionの startedAt/endedAt を履歴から引いて来たい場合は repositories にAPIがあればそれを使う
-  useEffect(() => {
-    // 省略可：必要なら repositories に getSession(sessionId) を生やして読み込む
+  useEffect(() => { 
+    (async()=> setSession(await getSession(sessionId) ?? null))() 
   }, [sessionId])
 
-    const active = activeId ? SPOTS.find(s => s.id === activeId) : undefined
-    // ★ 選択中スポットの集計だけ取り出す
-    const stat = (activeId !== undefined && spotStats[activeId])
-        ? spotStats[activeId]
-        : { att: 0, mk: 0, fg: 0 }
-    const att = stat.att
-    const mk  = stat.mk
-    const fgp = stat.fg * 100
+  // ★修正: spotStatsの読み込みを追加
+  useEffect(() => {
+    (async () => {
+      const breakdown = await getSessionSpotBreakdown(sessionId)
+      const stats: Record<number, { att: number, mk: number, fg: number }> = {}
+      breakdown.forEach(spot => {
+        stats[spot.id] = { att: spot.att, mk: spot.mk, fg: spot.fg }
+      })
+      setSpotStats(stats)
+    })()
+  }, [sessionId])
+
+  const active = activeId ? SPOTS.find(s => s.id === activeId) : undefined
+  // ★ 選択中スポットの集計だけ取り出す
+  const stat = (activeId !== undefined && spotStats[activeId])
+      ? spotStats[activeId]
+      : { att: 0, mk: 0, fg: 0 }
+  const att = stat.att
+  const mk  = stat.mk
+  const fgp = stat.fg * 100
 
   // メトリクス（レイアウト用の値）
   const metrics = useMemo(() => {

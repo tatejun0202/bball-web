@@ -1,241 +1,205 @@
+// src/app/settings/page.tsx
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Court from '@/components/CourtImageSpots'
-import { SPOTS } from '@/constants/spots'
-import {
-  addDrillResult, getOrCreateActiveSession, endSession, listZones,
-  getSession, updateSessionTitle,ensureSeedZones
-} from '@/db/repositories'
-import type { Zone } from '@/db/dexie'
-import { useEdgeSwipeToHistory } from '@/hooks/useEdgeSwipeToHistory'
-  import type { NewDrillResult } from '@/db/types'
+import Link from 'next/link'
+import type { Route } from 'next'
+import { listSessions, deleteSessionsCascade, clearAllHistory } from '@/db/repositories'
+import type { Session } from '@/db/dexie'
 
-
-/** 入力の正規化: 数字以外を除去 → 空なら ''、それ以外は整数文字に */
-function normalizeNumString(raw: string) {
-  const onlyDigits = raw.replace(/\D/g, '')
-  if (onlyDigits === '') return ''
-  return String(parseInt(onlyDigits, 10)) // 先頭ゼロを自動除去
+function fmt(ts?: number) {
+  if (!ts) return '-'
+  const d = new Date(ts)
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
 }
-/** 文字列→数値（空なら0） */
-const toInt = (s: string) => (s === '' ? 0 : parseInt(s, 10))
 
-export default function SessionPage() {
-  const router = useRouter()
-  useEdgeSwipeToHistory({ edgeStartRatio: 1/3, threshold: 80, maxPull: 160, flingMs: 220 })
-
-  const [sessionId, setSessionId] = useState<number>()
-  const [zones, setZones] = useState<Zone[]>([])
-  const [activeSpotId, setActiveSpotId] = useState<number>(SPOTS[0].id)
-
-  // タイトル（セッションごとに保存）
-  const [title, setTitle] = useState('タイトル')
-  const [editingTitle, setEditingTitle] = useState(false)
-
-  // ← 数値は string で管理：iOS Safari の 0 固定/先頭ゼロ問題を回避
-  const [attemptsStr, setAttemptsStr] = useState<string>('') // '' は空
-  const [makesStr, setMakesStr] = useState<string>('')
-
-  // 派生の数値（保存/検証用）
-  const attempts = useMemo(() => toInt(attemptsStr), [attemptsStr])
-  const makes    = useMemo(() => toInt(makesStr),    [makesStr])
+export default function SettingsPage() {
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [selected, setSelected] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
-    (async () => {
-      await ensureSeedZones()
-      const sid = await getOrCreateActiveSession()
-      setSessionId(sid)
-      const s = await getSession(sid)
-      if (s?.note) setTitle(s.note)
-      setZones(await listZones())
+    ;(async () => {
+      const ss = await listSessions()
+      setSessions(ss)
+      setSelected({})
     })().catch(console.error)
   }, [])
 
-  async function commitTitle() {
-    if (!sessionId) return
-    await updateSessionTitle(sessionId, title.trim())
-    setEditingTitle(false)
-  }
+  const allChecked = useMemo(() => {
+    if (sessions.length === 0) return false
+    return sessions.every(s => selected[s.id!] === true)
+  }, [sessions, selected])
 
-  const zoneId = useMemo(() => {
-    const is3 = SPOTS.find(s => s.id === activeSpotId)?.is3pt
-    const match = zones.find(z => Boolean(z.is3pt) === Boolean(is3))
-    return match?.id
-  }, [zones, activeSpotId])
-
-  const canSave = useMemo(
-    () => Boolean(sessionId && zoneId) && attempts > 0 && makes >= 0 && attempts >= makes, // ★ attempts>0 推奨
-    [sessionId, zoneId, attempts, makes]
+  const selectedIds = useMemo(
+    () => sessions.filter(s => selected[s.id!]).map(s => s.id!) as number[],
+    [sessions, selected]
   )
 
-
-
-  async function save() {
-    if (!canSave || !sessionId || !zoneId) return
-    const payload: NewDrillResult = {
-      sessionId, zoneId, spotId: activeSpotId, attempts, makes
-    }
-    await addDrillResult(payload)
-    setAttemptsStr(''); setMakesStr('')
+  async function refresh() {
+    const ss = await listSessions()
+    setSessions(ss)
+    setSelected({})
   }
-  
 
-  const dateLabel = (() => {
-    const d = new Date()
-    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
-  })()
+  async function onDeleteSelected() {
+    if (selectedIds.length === 0) return
+    if (!window.confirm(`${selectedIds.length}件の履歴を削除します。よろしいですか？`)) return
+    await deleteSessionsCascade(selectedIds)
+    await refresh()
+    alert('削除しました')
+  }
 
-  const activeSpot = SPOTS.find(s => s.id === activeSpotId)
-
-  // ±ボタンのヘルパ
-  const incStr = (s: string, delta: number) => {
-    const next = Math.max(0, toInt(s) + delta)
-    return String(next)
+  async function onDeleteAll() {
+    if (sessions.length === 0) return
+    if (!window.confirm('すべての履歴を削除します。この操作は取り消せません。')) return
+    await clearAllHistory()
+    await refresh()
+    alert('全削除しました')
   }
 
   return (
-    <main className="page-fit" style={{ padding: 16 }}>
-      {/* タイトル行（ペンで編集） */}
+    <main style={{ padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          {editingTitle ? (
-            <input
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              onBlur={commitTitle}
-              onKeyDown={e => { if (e.key === 'Enter') commitTitle() }}
-              autoFocus
-              style={{
-                fontSize: 24, fontWeight: 800, padding: '2px 6px',
-                border: '1px solid #555', borderRadius: 4, background: '#222', color: '#fff'
-              }}
-            />
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ fontSize: 24, fontWeight: 800 }}>{title}</div>
-              <button
-                type="button"
-                onClick={() => setEditingTitle(true)}
-                aria-label="edit title"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9aa', fontSize: 18, WebkitTapHighlightColor: 'transparent' }}
-              >✏️</button>
-            </div>
-          )}
-          <div style={{ color: '#9aa', marginTop: 4 }}>{dateLabel}</div>
+        <h1 style={{ fontSize: 20, fontWeight: 800 }}>Settings</h1>
+        <Link href={'/history' as Route} style={{ color: '#9ecbff' }}>
+          ＜ Back
+        </Link>
+      </div>
+
+      {/* 履歴の選択削除 */}
+      <section style={{ marginTop: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700 }}>Play Histories</h2>
+          <button
+            type="button"
+            onClick={() => {
+              if (allChecked) {
+                setSelected({})
+              } else {
+                const next: Record<number, boolean> = {}
+                for (const s of sessions) next[s.id!] = true
+                setSelected(next)
+              }
+            }}
+            style={{
+              border: '1px solid #666',
+              background: 'none',
+              color: '#ddd',
+              borderRadius: 8,
+              padding: '6px 10px',
+              cursor: 'pointer',
+              // ★iOS対策
+              WebkitTapHighlightColor: 'transparent',
+              WebkitAppearance: 'none',
+              touchAction: 'manipulation'
+            }}
+          >
+            {allChecked ? 'Uncheck all' : 'Check all'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onDeleteSelected}
+            disabled={selectedIds.length === 0}
+            style={{
+              marginLeft: 'auto',
+              border: '1px solid #e57373',
+              background: selectedIds.length ? '#7a2e2e' : '#3a2a2a',
+              color: '#ffd6d6',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontWeight: 700,
+              cursor: selectedIds.length ? 'pointer' : 'not-allowed',
+              // ★iOS対策
+              WebkitTapHighlightColor: 'transparent',
+              WebkitAppearance: 'none',
+              touchAction: 'manipulation'
+            }}
+          >
+            Delete selected
+          </button>
         </div>
-      </div>
 
-      {/* コート */}
-      <div style={{ marginTop: 8 }}>
-        <Court width={340} activeId={activeSpotId} onSelect={setActiveSpotId} flipY />
-      </div>
+        <ul style={{ marginTop: 10, display: 'grid', gap: 6 }}>
+          {sessions.map(s => {
+            const cid = `chk-${s.id}`
+            const href: Route = `/result/${String(s.id)}` as Route
+            return (
+              <li
+                key={s.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '24px 1fr auto',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 6px',
+                  borderBottom: '1px solid #2a2a2a'
+                }}
+              >
+                <input
+                  id={cid}
+                  type="checkbox"
+                  checked={Boolean(selected[s.id!])}
+                  onChange={e => setSelected(prev => ({ ...prev, [s.id!]: e.target.checked }))}
+                />
+                <label htmlFor={cid} style={{ cursor: 'pointer' }}>
+                  <div style={{ fontWeight: 700 }}>
+                    {s.note || 'Session'}
+                    {!s.endedAt && (
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          fontSize: 11,
+                          fontWeight: 800,
+                          color: '#fff',
+                          background: '#d22',
+                          padding: '2px 6px',
+                          borderRadius: 999
+                        }}
+                      >
+                        current
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>
+                    {fmt(s.startedAt)}
+                    {s.endedAt ? ` 〜 ${fmt(s.endedAt)}` : ''}
+                  </div>
+                </label>
+                <Link href={href} style={{ color: '#9ecbff', whiteSpace: 'nowrap' }}>
+                  View ›
+                </Link>
+              </li>
+            )
+          })}
+          {sessions.length === 0 && <li style={{ padding: '16px 4px', color: '#9aa' }}>履歴はありません</li>}
+        </ul>
+      </section>
 
-      {/* スポット名 */}
-      <div style={{ marginTop: 8, fontSize: 22, fontWeight: 800, textAlign: 'center' }}>
-        {activeSpot?.label ?? '-'}
-      </div>
-
-      {/* Attempt / Make：直接入力（text+numeric）＋ ± */}
-      <div style={{ marginTop: 8, display: 'grid', gap: 12, width: '100%', maxWidth: 360, marginInline: 'auto' }}>
-        <Row
-          label="Attempt"
-          value={attemptsStr}
-          onChange={(raw) => setAttemptsStr(normalizeNumString(raw))}
-          onMinus={() => setAttemptsStr(v => incStr(v, -1))}
-          onPlus={() => setAttemptsStr(v => incStr(v, +1))}
-        />
-        <Row
-          label="Make"
-          value={makesStr}
-          onChange={(raw) => setMakesStr(normalizeNumString(raw))}
-          onMinus={() => setMakesStr(v => incStr(v, -1))}
-          onPlus={() => setMakesStr(v => incStr(v, +1))}
-        />
-      </div>
-
-      {/* Enter / End Session */}
-      <div style={{ marginTop: 12, textAlign: 'center', display: 'grid', gap: 10, width: 220, marginInline: 'auto' }}>
+      {/* Danger Zone */}
+      <section style={{ marginTop: 24 }}>
+        <div style={{ fontSize: 14, color: '#f5bdbd', marginBottom: 8, fontWeight: 700 }}>Danger Zone</div>
         <button
-          type="button" // ← Safari対策
-          disabled={!canSave}
-          onClick={save}
+          type="button"
+          onClick={onDeleteAll}
+          disabled={sessions.length === 0}
           style={{
-            padding: '10px 22px', borderRadius: 10,
-            background: canSave ? '#0ea5e9' : '#2b4a58',
-            color: '#dff3ff', border: '1px solid #2aa3e0',
-            fontWeight: 800, cursor: canSave ? 'pointer' : 'not-allowed',
-            WebkitTapHighlightColor: 'transparent', WebkitAppearance: 'none', touchAction: 'manipulation'
+            width: '100%',
+            border: '1px solid #e57373',
+            background: sessions.length ? '#7a2e2e' : '#3a2a2a',
+            color: '#ffd6d6',
+            borderRadius: 10,
+            padding: '10px 14px',
+            fontWeight: 800,
+            cursor: sessions.length ? 'pointer' : 'not-allowed',
+            // ★iOS対策
+            WebkitTapHighlightColor: 'transparent',
+            WebkitAppearance: 'none',
+            touchAction: 'manipulation'
           }}
-        >Enter</button>
-
-        <button
-          type="button" // ← Safari対策
-          disabled={!sessionId}
-          onClick={async () => {
-            if (!sessionId) return
-            await endSession(sessionId)
-            router.replace('/history') // 履歴へ
-          }}
-          style={{
-            padding: '10px 22px', borderRadius: 10,
-            background: '#2a2a2a', color: '#eee', border: '1px solid #555',
-            fontWeight: 800, cursor: 'pointer',
-            WebkitTapHighlightColor: 'transparent', WebkitAppearance: 'none', touchAction: 'manipulation'
-          }}
-        >End Session</button>
-      </div>
+        >
+          Delete all histories
+        </button>
+      </section>
     </main>
-  )
-}
-
-function Row({
-  label, value, onMinus, onPlus, onChange
-}:{
-  label: string
-  value: string               // ← string
-  onMinus: () => void
-  onPlus: () => void
-  onChange: (v: string) => void
-}) {
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '88px minmax(0,1fr) 40px 40px',
-        alignItems: 'center',
-        gap: 10,
-        width: '100%'
-      }}
-    >
-      <div style={{ color: '#b9b9b9', textAlign: 'left' }}>{label}</div>
-      <input
-        type="text"             // ← Safari安定のため number は使わない
-        inputMode="numeric"     // 数字キーボード
-        pattern="\d*"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          height: 38,
-          border: '1px solid #555',
-          borderRadius: 8,
-          background: '#222',
-          color: '#fff',
-          textAlign: 'center',
-          fontSize: 18,
-          fontWeight: 700,
-          width: '100%',
-          boxSizing: 'border-box'
-        }}
-      />
-      <button type="button" onClick={onMinus}
-        style={{ height: 38, borderRadius: 8, background: 'none', border: '1px solid #777', color: '#ddd', fontSize: 18, cursor: 'pointer',
-          WebkitTapHighlightColor: 'transparent', WebkitAppearance: 'none', touchAction: 'manipulation' }}
-      >－</button>
-      <button type="button" onClick={onPlus}
-        style={{ height: 38, borderRadius: 8, background: 'none', border: '1px solid #777', color: '#ddd', fontSize: 18, cursor: 'pointer',
-          WebkitTapHighlightColor: 'transparent', WebkitAppearance: 'none', touchAction: 'manipulation' }}
-      >＋</button>
-    </div>
   )
 }
