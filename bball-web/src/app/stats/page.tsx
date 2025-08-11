@@ -1,7 +1,7 @@
 // src/app/stats/page.tsx
 'use client'
 import { useEffect, useState } from 'react'
-import { useEdgeSwipeToHistory } from '@/hooks/useEdgeSwipeToHistory'
+import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { 
   getAllSessionsStats, 
   getOverallStats, 
@@ -17,7 +17,7 @@ import StatsCharts from '@/components/StatsCharts'
 import StatsHeatmap from '@/components/StatsHeatmap'
 
 export default function StatsPage() {
-  useEdgeSwipeToHistory({ edgeStartRatio: 1/3, threshold: 80, maxPull: 160, flingMs: 220 })
+  useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 })
 
   const [loading, setLoading] = useState(true)
   const [selectedTab, setSelectedTab] = useState<'overview' | 'trends' | 'heatmap'>('overview')

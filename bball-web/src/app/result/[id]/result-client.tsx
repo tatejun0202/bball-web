@@ -10,8 +10,6 @@ import type { Session } from '@/db/dexie'
 import type { PositionInfo } from '@/db/types'
 import { useEdgeSwipeToHistory } from '@/hooks/useEdgeSwipeToHistory'
 
-const pct = (n: number) => (n * 100).toFixed(1)
-
 export default function ResultClientV2({ sessionId }: { sessionId: number }) {
   useEdgeSwipeToHistory({ edgeStartRatio: 1/3, threshold: 80, maxPull: 160, flingMs: 220 })
   
@@ -107,6 +105,15 @@ export default function ResultClientV2({ sessionId }: { sessionId: number }) {
     return summary.twoPoint.makes * 2 + summary.threePoint.makes * 3
   }, [summary])
 
+    const areaLabel = selectedPosition
+    ? selectedPosition.type === 'fixed'
+      ? selectedPosition.label
+      : getAreaName(selectedPosition.x, selectedPosition.y)
+    : '-'
+  const att = selectedPosition?.attempts ?? 0
+  const mk = selectedPosition?.makes ?? 0
+  const fgp = att ? (mk / att) * 100 : 0
+
   if (!session || !summary) {
     return (
       <main className="page-fit" style={{ padding: 16 }}>
@@ -124,70 +131,86 @@ export default function ResultClientV2({ sessionId }: { sessionId: number }) {
   }
 
   return (
-    <main className="page-fit" style={{ padding: 16, paddingBottom: 60 }}>
-      {/* 日付 & タイトル */}
-      <div style={{ fontSize: 15, fontWeight: 400, color: '#9aa' }}>{dateLabel}</div>
-      <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
-        {session.note || 'Session'}
-      </div>
-      
-      {/* コメント入力 */}
-      <input 
-        placeholder="comment" 
-        style={{ 
-          marginBottom: 12, width: '100%', padding: '8px 10px', 
-          borderRadius: 4, border: '1px solid #555', 
-          background: '#222', color: '#fff',
-          boxSizing: 'border-box'
-        }} 
-      />
-
-      {/* メトリクス 3×2 */}
-      <section style={{ marginBottom: 16 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-          {/* 1段目 */}
-          <Metric value={minutes} label="MINS" />
-          <Metric value={points} label="PTS" />
-          <Metric value={summary.total.percentage.toFixed(1)} label="FG%" unit="%" />
-
-          {/* 2段目 */}
-          <Metric 
-            value={`${summary.total.makes}/${summary.total.attempts}`} 
-            label="FG" 
-            text 
-          />
-          <Metric 
-            value={`${summary.threePoint.makes}/${summary.threePoint.attempts}`} 
-            label="3FG" 
-            text 
-          />
-          <Metric 
-            value={summary.efgPercentage.toFixed(1)} 
-            label="eFG%" 
-            unit="%" 
-          />
+   <main className="page-fit">
+      <div className="fit-scroll" style={{ padding: 16, paddingBottom: 100 }}>
+        {/* 日付 & タイトル */}
+        <div style={{ fontSize: 15, fontWeight: 400, color: '#9aa' }}>{dateLabel}</div>
+        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+          {session.note || 'Session'}
         </div>
-      </section>
 
-      {/* Shot chart */}
-      <h3 style={{ 
-        marginBottom: 12, 
-        fontWeight: 700, 
-        textAlign: 'center', 
-        color: '#bbb' 
-      }}>
-        Shot chart
-      </h3>
-      
-      <FreePositionCourt
-        width={Math.min(340, window.innerWidth - 32)}
-        mode="display"
-        positions={positions}
-        selectedPosition={selectedPosition}
-        onPositionSelect={handlePositionSelect}
-        flipY={true}
-        showFixedSpots={false}
-      />
+        {/* メトリクス 3×2 */}
+        <section style={{ marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {/* 1段目 */}
+            <Metric value={minutes} label="MINS" />
+            <Metric value={points} label="PTS" />
+            <Metric value={summary.total.percentage.toFixed(1)} label="FG%" unit="%" />
+
+            {/* 2段目 */}
+            <Metric
+              value={`${summary.total.makes}/${summary.total.attempts}`}
+              label="FG"
+              text
+            />
+            <Metric
+              value={`${summary.threePoint.makes}/${summary.threePoint.attempts}`}
+              label="3FG"
+              text
+            />
+            <Metric
+              value={summary.efgPercentage.toFixed(1)}
+              label="eFG%"
+              unit="%"
+            />
+          </div>
+        </section>
+
+        {/* Shot chart */}
+        <h3 style={{
+          marginBottom: 12,
+          fontWeight: 700,
+          textAlign: 'center',
+          color: '#bbb'
+        }}>
+          Shot chart
+        </h3>
+
+        <FreePositionCourt
+          width={Math.min(340, window.innerWidth - 32)}
+          mode="display"
+          positions={positions}
+          selectedPosition={selectedPosition}
+          onPositionSelect={handlePositionSelect}
+          flipY={true}
+          showFixedSpots={false}
+        />
+
+        {/* Selected area summary */}
+        <div
+          style={{
+            marginTop: 6,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            alignItems: 'end',
+            textAlign: 'center',
+            gap: 12,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{att}</div>
+            <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>Attempt</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{mk}</div>
+            <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>Made</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{fgp.toFixed(1)}</div>
+            <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>FG%</div>
+          </div>
+        </div>
+      </div>
     </main>
   )
 }

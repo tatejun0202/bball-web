@@ -1,6 +1,6 @@
 // src/components/HistoryScreen.tsx (V2版)
 'use client'
-import Link from 'next/link'
+import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { listSessions, getSessionSummary, startSession, endSession } from '@/db/repositories'
@@ -17,6 +17,7 @@ const mins = (s:Session) => Math.max(1, Math.floor(((s.endedAt ?? Date.now()) - 
 export default function HistoryScreenV2() {
   const router = useRouter()
   const [items, setItems] = useState<Array<Session & { att:number; mk:number; fg:number }>>([])
+  useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 })
   
   const load = useCallback(async () => {
     const ss = await listSessions()

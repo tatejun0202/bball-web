@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Court from '@/components/CourtImageSpots'
 import { SPOTS } from '@/constants/spots'
-import { getSession, getSessionSummary, getSessionSpotBreakdown } from '@/db/repositories'
+import { getSession, getSessionSpotBreakdown } from '@/db/repositories'
 import type { Session } from '@/db/dexie'
 import { useEdgeSwipeToHistory } from '@/hooks/useEdgeSwipeToHistory'
 
@@ -52,42 +52,15 @@ export default function ResultSpotClient({ sessionId }: { sessionId: number }) {
   }, [session])
 
   return (
-    <main className="page-fit" style={{ padding: 16 }}>
-      {/* 日付 & コメント */}
-      <div style={{ fontSize: 15, fontWeight: 400 }}>{dateLabel}</div>
-      <div style={{ fontSize: 18, fontWeight: 700 }}>{session?.note ?? 'Session'}</div>
-      
-      {/* モード表示 */}
-      <div style={{
-        marginTop: 8,
-        marginBottom: 8,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6
-      }}>
-        <div style={{
-          padding: '4px 8px',
-          background: '#3b82f6',
-          color: '#fff',
-          borderRadius: 12,
-          fontSize: 12,
-          fontWeight: 600
-        }}>
-          Spot
-        </div>
-      </div>
-      
-      <input 
-        placeholder="comment" 
-        style={{ 
-          marginTop: 8, width: '100%', padding: '8px 10px', 
-          borderRadius: 4, border: '1px solid #555', background: '#222', color: '#fff' 
-        }} 
-      />
+    <main className="page-fit">
+      <div className="fit-scroll" style={{ padding: 16, paddingBottom: 100 }}>
+        {/* 日付 & タイトル */}
+        <div style={{ fontSize: 15, fontWeight: 400 }}>{dateLabel}</div>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>{session?.note ?? 'Session'}</div>
 
       {/* メトリクス 3×2 */}
-      <section style={{ marginTop: 10 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+        <section style={{ marginTop: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
           {/* 1段目 */}
           <Metric big={metrics.mins ?? 0} label="MINS" />
           <Metric 
@@ -121,39 +94,40 @@ export default function ResultSpotClient({ sessionId }: { sessionId: number }) {
             label="eFG%" 
             unit="%" 
           />
-        </div>
-      </section>
+          </div>
+        </section>
 
       {/* Shot chart（上下反転ON） */}
-      <h3 style={{ marginTop: 10, fontWeight: 700, textAlign: 'center', color: '#bbb' }}>Shot chart</h3>
-      <Court width={360} activeId={activeId} onSelect={setActiveId} flipY />
+        <h3 style={{ marginTop: 10, fontWeight: 700, textAlign: 'center', color: '#bbb' }}>Shot chart</h3>
+        <Court width={360} activeId={activeId} onSelect={setActiveId} flipY />
 
-      {/* 下部のスポットサマリ */}
-      <div style={{ marginTop: 10, textAlign: 'center', color:'#bbb', fontSize:12 }}>
-        {active?.label ?? '-'}
-      </div>
+        {/* 下部のスポットサマリ */}
+        <div style={{ marginTop: 10, textAlign: 'center', color:'#bbb', fontSize:12 }}>
+          {active?.label ?? '-'}
+        </div>
 
-      <div
-        style={{
-          marginTop: 6,
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
-          alignItems: 'end',
-          textAlign: 'center',
-          gap: 12,
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{att}</div>
-          <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>Attempt</div>
-        </div>
-        <div>
-          <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{mk}</div>
-          <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>Made</div>
-        </div>
-        <div>
-          <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{fgp.toFixed(1)}</div>
-          <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>FG%</div>
+        <div
+          style={{
+            marginTop: 6,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            alignItems: 'end',
+            textAlign: 'center',
+            gap: 12,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{att}</div>
+            <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>Attempt</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{mk}</div>
+            <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>Made</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{fgp.toFixed(1)}</div>
+            <div style={{ fontSize: 12, color: '#9aa', marginTop: 2 }}>FG%</div>
+          </div>
         </div>
       </div>
     </main>
