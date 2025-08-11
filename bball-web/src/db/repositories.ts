@@ -37,7 +37,6 @@ export async function ensureSeedZones() {
   await db.zones.bulkAdd(rows)
 }
 
-
 export async function addDrillResult(input: NewDrillResult) {
   // Dexieのテーブル型と一致していればそのままでOK
   return db.drillResults.add(input as unknown as Parameters<typeof db.drillResults.add>[0])
