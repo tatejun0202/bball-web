@@ -47,6 +47,11 @@ export default function LiveCameraAnalysis({ onRecordingComplete, onBack }: Live
         streamRef.current = stream
         setIsStreamActive(true)
         setError(null)
+        
+        // 動画が再生可能になったら再生開始
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(console.error)
+        }
       }
     } catch (err) {
       setError('カメラアクセスに失敗しました。カメラの権限を確認してください。')
@@ -190,15 +195,6 @@ export default function LiveCameraAnalysis({ onRecordingComplete, onBack }: Live
         }}>
           📹 ライブ解析
         </div>
-        {isRecording && (
-          <div style={{
-            color: '#ef4444',
-            fontSize: 16,
-            fontWeight: 600
-          }}>
-            REC {formatTime(recordingTime)}
-          </div>
-        )}
       </div>
 
       {/* エラー表示 */}
@@ -255,7 +251,14 @@ export default function LiveCameraAnalysis({ onRecordingComplete, onBack }: Live
         ) : (
           // カメラ映像エリア
           <>
-            <div style={{ flex: 1, position: 'relative', background: '#000' }}>
+            <div style={{ 
+              flex: 1, 
+              position: 'relative', 
+              background: '#000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
               <video
                 ref={videoRef}
                 autoPlay
@@ -267,6 +270,23 @@ export default function LiveCameraAnalysis({ onRecordingComplete, onBack }: Live
                   objectFit: 'cover'
                 }}
               />
+              
+              {/* カメラ映像が表示されない場合の代替表示 */}
+              {isStreamActive && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  color: '#fff',
+                  textAlign: 'center',
+                  fontSize: 14,
+                  pointerEvents: 'none',
+                  opacity: 0.7
+                }}>
+                  カメラ映像を読み込み中...
+                </div>
+              )}
 
               {/* 品質チェックオーバーレイ */}
               <div style={{
@@ -308,17 +328,18 @@ export default function LiveCameraAnalysis({ onRecordingComplete, onBack }: Live
               {isRecording && (
                 <div style={{
                   position: 'absolute',
-                  top: 16,
+                  top: 80, // 品質チェックオーバーレイの下に配置
                   right: 16,
                   background: '#ef4444',
                   color: '#fff',
-                  padding: '6px 12px',
+                  padding: '8px 12px',
                   borderRadius: 20,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6
+                  gap: 6,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
                 }}>
                   <div style={{
                     width: 8,
@@ -327,31 +348,33 @@ export default function LiveCameraAnalysis({ onRecordingComplete, onBack }: Live
                     background: '#fff',
                     animation: 'pulse 1s infinite'
                   }} />
-                  録画中
+                  録画中 {formatTime(recordingTime)}
                 </div>
               )}
             </div>
 
             {/* コントロールエリア */}
             <div style={{
-              padding: 20,
+              padding: 24,
               background: '#222',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 20
+              gap: 24,
+              borderTop: '1px solid #333'
             }}>
               {!isRecording ? (
                 <>
                   <button
                     onClick={stopCamera}
                     style={{
-                      padding: '12px 20px',
-                      borderRadius: 10,
-                      background: '#666',
+                      padding: '14px 24px',
+                      borderRadius: 12,
+                      background: '#555',
                       color: '#fff',
                       border: 'none',
                       fontWeight: 600,
+                      fontSize: 15,
                       cursor: 'pointer',
                       WebkitTapHighlightColor: 'transparent'
                     }}
@@ -361,43 +384,60 @@ export default function LiveCameraAnalysis({ onRecordingComplete, onBack }: Live
                   <button
                     onClick={startRecording}
                     style={{
-                      width: 80,
-                      height: 80,
+                      width: 84,
+                      height: 84,
                       borderRadius: '50%',
                       background: '#ef4444',
-                      border: '4px solid #fff',
+                      border: '6px solid #fff',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: '#fff',
-                      fontSize: 24,
-                      WebkitTapHighlightColor: 'transparent'
+                      fontSize: 28,
+                      fontWeight: 700,
+                      WebkitTapHighlightColor: 'transparent',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
                     }}
                   >
                     ●
                   </button>
+                  <div style={{ width: 100 }}></div> {/* スペーサー */}
                 </>
               ) : (
-                <button
-                  onClick={stopRecording}
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 12,
-                    background: '#ef4444',
-                    border: '4px solid #fff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                <>
+                  <div style={{ width: 100 }}></div> {/* スペーサー */}
+                  <button
+                    onClick={stopRecording}
+                    style={{
+                      width: 84,
+                      height: 84,
+                      borderRadius: 16,
+                      background: '#ef4444',
+                      border: '6px solid #fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: 32,
+                      fontWeight: 700,
+                      WebkitTapHighlightColor: 'transparent',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                    }}
+                  >
+                    ■
+                  </button>
+                  <div style={{
                     color: '#fff',
-                    fontSize: 24,
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
-                >
-                  ■
-                </button>
+                    fontSize: 16,
+                    fontWeight: 600,
+                    textAlign: 'center',
+                    minWidth: 100
+                  }}>
+                    {formatTime(recordingTime)}
+                  </div>
+                </>
               )}
             </div>
           </>

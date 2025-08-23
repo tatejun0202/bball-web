@@ -277,10 +277,159 @@ export default function SessionPageV3() {
     return String(next)
   }
 
+  // V3: フルスクリーンモードかどうかの判定
+  const isFullScreenMode = analysisStep !== 'mode-selection'
+
+  if (isFullScreenMode) {
+    // フルスクリーンモード（カメラ、アップロード、解析画面）
+    return (
+      <div style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: '#1a1a1a',
+        zIndex: 1000
+      }}>
+        {/* V3: ライブカメラ解析画面 */}
+        {analysisStep === 'camera-recording' && (
+          <LiveCameraAnalysis
+            onRecordingComplete={handleLiveCameraComplete}
+            onBack={resetAnalysisFlow}
+          />
+        )}
+
+        {/* V3: 動画アップロード画面 */}
+        {analysisStep === 'video-upload' && (
+          <VideoUploadAnalysis
+            onVideoSelected={handleVideoUploadSelected}
+            onBack={resetAnalysisFlow}
+          />
+        )}
+
+        {/* V3: 解析進捗画面 */}
+        {analysisStep === 'analysis-progress' && (currentVideoBlob || currentVideoFile) && (
+          <VideoAnalysisProgress
+            videoBlob={currentVideoBlob || currentVideoFile!}
+            onAnalysisComplete={handleAnalysisComplete}
+            onBack={resetAnalysisFlow}
+          />
+        )}
+
+        {/* V3: 解析結果レビュー画面 */}
+        {analysisStep === 'results-review' && (
+          <div style={{ 
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '20px 16px',
+            background: '#1a1a1a',
+            color: '#fff',
+            overflow: 'auto'
+          }}>
+            <div style={{ 
+              background: '#222',
+              borderRadius: 12,
+              padding: '24px 16px',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center'
+            }}>
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20, textAlign: 'center' }}>
+                🎯 解析完了！
+              </h3>
+              
+              <div style={{ 
+                background: '#10b981',
+                color: '#fff',
+                padding: 20,
+                borderRadius: 12,
+                textAlign: 'center',
+                marginBottom: 24
+              }}>
+                <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
+                  {detectedShots.length}個のシュートを検出
+                </div>
+                <div style={{ fontSize: 16, opacity: 0.9 }}>
+                  成功: {detectedShots.filter(s => s.result === 'make').length}回 / 
+                  失敗: {detectedShots.filter(s => s.result === 'miss').length}回
+                </div>
+              </div>
+
+              <div style={{ 
+                display: 'flex',
+                gap: 12,
+                marginBottom: 20
+              }}>
+                <button
+                  onClick={() => {
+                    resetAnalysisFlow()
+                    setRecordingMode('manual')
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '16px 20px',
+                    borderRadius: 12,
+                    background: '#666',
+                    color: '#fff',
+                    border: 'none',
+                    fontWeight: 600,
+                    fontSize: 16,
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                >
+                  手動モードに戻る
+                </button>
+                <button
+                  onClick={resetAnalysisFlow}
+                  style={{
+                    flex: 1,
+                    padding: '16px 20px',
+                    borderRadius: 12,
+                    background: '#0ea5e9',
+                    color: '#fff',
+                    border: 'none',
+                    fontWeight: 600,
+                    fontSize: 16,
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                >
+                  新しい解析
+                </button>
+              </div>
+
+              <div style={{ 
+                padding: 16,
+                background: 'rgba(16, 185, 129, 0.1)',
+                borderRadius: 8,
+                fontSize: 14,
+                color: '#10b981',
+                textAlign: 'center'
+              }}>
+                ✅ シュートデータは自動でセッションに保存されました
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // 通常モード（モード選択画面）
   return (
-    <main className="page-fit" style={{ padding: 16 }}>
+    <main className="page-fit" style={{ 
+      display: 'flex',
+      flexDirection: 'column',
+      height: 'calc(100vh - 60px)', // フッターの高さを考慮
+      padding: '12px 16px 16px 16px',
+      overflow: 'hidden'
+    }}>
       {/* タイトル行（ペンで編集） */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexShrink: 0 }}>
         <div>
           {editingTitle ? (
             <input
@@ -314,12 +463,13 @@ export default function SessionPageV3() {
 
       {/* V3: 録画モード選択ドロップダウン */}
       <div style={{ 
-        marginTop: 16, 
-        marginBottom: 16, 
+        marginTop: 12, 
+        marginBottom: 12, 
         display: 'flex', 
         alignItems: 'center', 
         gap: 12,
-        padding: '0 4px'
+        padding: '0 4px',
+        flexShrink: 0
       }}>
         <label style={{ 
           fontSize: 14, 
@@ -361,8 +511,8 @@ export default function SessionPageV3() {
       {recordingMode === 'manual' && (
         <>
           {/* コート */}
-          <div style={{ marginTop: 12 }}>
-            <div style={{ position: 'relative' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {/* トグルボタン（コート右上外側） */}
               <div style={{
                 position: 'absolute',
@@ -407,7 +557,7 @@ export default function SessionPageV3() {
               </div>
               
               <FreePositionCourt
-                width={340}
+                width={typeof window !== 'undefined' ? Math.min(340, window.innerWidth - 40) : 340}
                 mode="select"
                 selectedPosition={selectedPosition}
                 onPositionSelect={handlePositionSelect}
@@ -420,12 +570,13 @@ export default function SessionPageV3() {
 
           {/* Attempt / Make：直接入力（text+numeric）＋ ± */}
           <div style={{ 
-            marginTop: 16, 
+            marginTop: 12, 
             display: 'grid', 
-            gap: 12, 
+            gap: 10, 
             width: '100%', 
             maxWidth: 360, 
-            marginInline: 'auto' 
+            marginInline: 'auto',
+            flexShrink: 0
           }}>
             <Row
               label="Attempt"
@@ -445,12 +596,14 @@ export default function SessionPageV3() {
 
           {/* Enter / End Session */}
           <div style={{ 
-            marginTop: 16, 
+            marginTop: 12, 
             textAlign: 'center', 
             display: 'grid', 
-            gap: 10, 
+            gap: 8, 
             width: 220, 
-            marginInline: 'auto' 
+            marginInline: 'auto',
+            flexShrink: 0,
+            paddingBottom: 8
           }}>
             <button
               type="button"
@@ -503,12 +656,16 @@ export default function SessionPageV3() {
       {/* ライブ解析モード */}
       {recordingMode === 'live' && analysisStep === 'mode-selection' && (
         <div style={{ 
-          marginTop: 32,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
           textAlign: 'center',
-          padding: '32px 16px',
+          padding: '24px 16px',
           border: '2px dashed #555',
           borderRadius: 12,
-          background: 'rgba(34, 34, 34, 0.5)'
+          background: 'rgba(34, 34, 34, 0.5)',
+          margin: '16px 0'
         }}>
           <div style={{ fontSize: 18, fontWeight: 600, color: '#0ea5e9', marginBottom: 12 }}>
             📹 ライブ解析モード
@@ -542,12 +699,16 @@ export default function SessionPageV3() {
       {/* 動画アップロードモード */}
       {recordingMode === 'upload' && analysisStep === 'mode-selection' && (
         <div style={{ 
-          marginTop: 32,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
           textAlign: 'center',
-          padding: '32px 16px',
+          padding: '24px 16px',
           border: '2px dashed #555',
           borderRadius: 12,
-          background: 'rgba(34, 34, 34, 0.5)'
+          background: 'rgba(34, 34, 34, 0.5)',
+          margin: '16px 0'
         }}>
           <div style={{ fontSize: 18, fontWeight: 600, color: '#10b981', marginBottom: 12 }}>
             📁 動画アップロードモード
@@ -578,122 +739,13 @@ export default function SessionPageV3() {
         </div>
       )}
 
-      {/* V3: ライブカメラ解析画面 */}
-      {analysisStep === 'camera-recording' && (
-        <LiveCameraAnalysis
-          onRecordingComplete={handleLiveCameraComplete}
-          onBack={resetAnalysisFlow}
-        />
-      )}
-
-      {/* V3: 動画アップロード画面 */}
-      {analysisStep === 'video-upload' && (
-        <VideoUploadAnalysis
-          onVideoSelected={handleVideoUploadSelected}
-          onBack={resetAnalysisFlow}
-        />
-      )}
-
-      {/* V3: 解析進捗画面 */}
-      {analysisStep === 'analysis-progress' && (currentVideoBlob || currentVideoFile) && (
-        <VideoAnalysisProgress
-          videoBlob={currentVideoBlob || currentVideoFile!}
-          onAnalysisComplete={handleAnalysisComplete}
-          onBack={resetAnalysisFlow}
-        />
-      )}
-
-      {/* V3: 解析結果レビュー画面 */}
-      {analysisStep === 'results-review' && (
-        <div style={{ 
-          marginTop: 32,
-          padding: '24px 16px',
-          background: '#222',
-          borderRadius: 12,
-          color: '#fff'
-        }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>
-            🎯 解析完了！
-          </h3>
-          
-          <div style={{ 
-            background: '#10b981',
-            color: '#fff',
-            padding: 16,
-            borderRadius: 8,
-            textAlign: 'center',
-            marginBottom: 20
-          }}>
-            <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
-              {detectedShots.length}個のシュートを検出
-            </div>
-            <div style={{ fontSize: 14, opacity: 0.9 }}>
-              成功: {detectedShots.filter(s => s.result === 'make').length}回 / 
-              失敗: {detectedShots.filter(s => s.result === 'miss').length}回
-            </div>
-          </div>
-
-          <div style={{ 
-            display: 'flex',
-            gap: 12,
-            marginTop: 20
-          }}>
-            <button
-              onClick={() => {
-                resetAnalysisFlow()
-                setRecordingMode('manual')
-              }}
-              style={{
-                flex: 1,
-                padding: '12px 20px',
-                borderRadius: 10,
-                background: '#666',
-                color: '#fff',
-                border: 'none',
-                fontWeight: 600,
-                cursor: 'pointer',
-                WebkitTapHighlightColor: 'transparent'
-              }}
-            >
-              手動モードに戻る
-            </button>
-            <button
-              onClick={resetAnalysisFlow}
-              style={{
-                flex: 1,
-                padding: '12px 20px',
-                borderRadius: 10,
-                background: '#0ea5e9',
-                color: '#fff',
-                border: 'none',
-                fontWeight: 600,
-                cursor: 'pointer',
-                WebkitTapHighlightColor: 'transparent'
-              }}
-            >
-              新しい解析
-            </button>
-          </div>
-
-          <div style={{ 
-            marginTop: 16,
-            padding: 12,
-            background: 'rgba(16, 185, 129, 0.1)',
-            borderRadius: 8,
-            fontSize: 12,
-            color: '#10b981',
-            textAlign: 'center'
-          }}>
-            ✅ シュートデータは自動でセッションに保存されました
-          </div>
-        </div>
-      )}
-
       {/* 共通: End Session ボタン（V3機能用） */}
       {recordingMode !== 'manual' && analysisStep === 'mode-selection' && (
         <div style={{ 
-          marginTop: 24, 
-          textAlign: 'center'
+          marginTop: 16, 
+          textAlign: 'center',
+          flexShrink: 0,
+          paddingBottom: 8
         }}>
           <button
             type="button"
@@ -704,12 +756,12 @@ export default function SessionPageV3() {
               router.replace('/history')
             }}
             style={{
-              padding: '10px 22px', 
+              padding: '12px 24px', 
               borderRadius: 10,
               background: '#2a2a2a', 
               color: '#eee', 
               border: '1px solid #555',
-              fontWeight: 800, 
+              fontWeight: 700, 
               cursor: 'pointer',
               WebkitTapHighlightColor: 'transparent', 
               WebkitAppearance: 'none', 
