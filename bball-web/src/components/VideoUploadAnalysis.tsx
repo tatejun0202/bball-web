@@ -30,8 +30,8 @@ export default function VideoUploadAnalysis({ onVideoSelected, onBack }: VideoUp
       return
     }
 
-    if (file.size > 500 * 1024 * 1024) { // 500MB制限
-      setError('ファイルサイズが大きすぎます（最大500MB）')
+    if (file.size > 1.5 * 1024 * 1024 * 1024) { // 1.5GB制限
+      setError('ファイルサイズが大きすぎます（最大1.5GB）')
       return
     }
 
@@ -228,7 +228,7 @@ export default function VideoUploadAnalysis({ onVideoSelected, onBack }: VideoUp
             </div>
             <div style={{ fontSize: 14, color: '#b9b9b9', marginBottom: 16, lineHeight: 1.5 }}>
               クリックまたはドラッグ＆ドロップ<br />
-              対応形式: MP4, MOV, WebM（最大500MB）
+              対応形式: MP4, MOV, WebM（最大1.5GB）
             </div>
             <button
               style={{

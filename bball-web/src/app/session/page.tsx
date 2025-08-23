@@ -176,15 +176,46 @@ export default function SessionPageV3() {
 
   // V3: ライブカメラ録画完了の処理
   const handleLiveCameraComplete = async (videoBlob: Blob) => {
+    // 新しいセッションを作成
+    await createNewSessionForRecording('ライブ録画')
     setCurrentVideoBlob(videoBlob)
     setAnalysisStep('analysis-progress')
   }
 
   // V3: 動画アップロード選択の処理
   const handleVideoUploadSelected = async (file: File, qualityCheck: VideoQualityCheck) => {
+    // 新しいセッションを作成
+    await createNewSessionForRecording(`動画アップロード: ${file.name}`)
     setCurrentVideoFile(file)
     setVideoQualityCheck(qualityCheck)
     setAnalysisStep('analysis-progress')
+  }
+
+  // V3: 録画・動画用の新セッション作成
+  const createNewSessionForRecording = async (sessionName: string) => {
+    try {
+      // 現在のセッションを終了
+      if (sessionId) {
+        await endSession(sessionId)
+      }
+      
+      // 新しいセッションを作成
+      const newSessionId = await getOrCreateActiveSession()
+      setSessionId(newSessionId)
+      
+      // セッション数を取得して新しいタイトルを生成
+      const sessions = await listSessions()
+      const sessionCount = sessions.length
+      const newTitle = `${sessionName} - Session${sessionCount}`
+      setTitle(newTitle)
+      
+      // データベースに保存
+      await updateSessionTitle(newSessionId, newTitle)
+      
+      console.log(`新しいセッションを作成しました: ${newTitle} (ID: ${newSessionId})`)
+    } catch (error) {
+      console.error('セッション作成エラー:', error)
+    }
   }
 
   // V3: 解析完了時の処理
@@ -347,7 +378,7 @@ export default function SessionPageV3() {
                 padding: 20,
                 borderRadius: 12,
                 textAlign: 'center',
-                marginBottom: 24
+                marginBottom: 16
               }}>
                 <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
                   {detectedShots.length}個のシュートを検出
@@ -355,6 +386,22 @@ export default function SessionPageV3() {
                 <div style={{ fontSize: 16, opacity: 0.9 }}>
                   成功: {detectedShots.filter(s => s.result === 'make').length}回 / 
                   失敗: {detectedShots.filter(s => s.result === 'miss').length}回
+                </div>
+              </div>
+
+              <div style={{
+                background: 'rgba(14, 165, 233, 0.1)',
+                border: '1px solid rgba(14, 165, 233, 0.2)',
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 20,
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: 14, color: '#0ea5e9', fontWeight: 600 }}>
+                  📊 セッション: {title}
+                </div>
+                <div style={{ fontSize: 12, color: '#9aa', marginTop: 4 }}>
+                  新しいセッションとして保存されました
                 </div>
               </div>
 
@@ -570,13 +617,14 @@ export default function SessionPageV3() {
 
           {/* Attempt / Make：直接入力（text+numeric）＋ ± */}
           <div style={{ 
-            marginTop: 12, 
+            marginTop: 10, 
             display: 'grid', 
-            gap: 10, 
+            gap: 8, 
             width: '100%', 
-            maxWidth: 360, 
+            maxWidth: 'min(360px, calc(100vw - 32px))', 
             marginInline: 'auto',
-            flexShrink: 0
+            flexShrink: 0,
+            padding: '0 4px'
           }}>
             <Row
               label="Attempt"
@@ -596,26 +644,28 @@ export default function SessionPageV3() {
 
           {/* Enter / End Session */}
           <div style={{ 
-            marginTop: 12, 
+            marginTop: 10, 
             textAlign: 'center', 
             display: 'grid', 
-            gap: 8, 
-            width: 220, 
+            gap: 6, 
+            width: '100%',
+            maxWidth: 'min(280px, calc(100vw - 32px))', 
             marginInline: 'auto',
             flexShrink: 0,
-            paddingBottom: 8
+            paddingBottom: 4
           }}>
             <button
               type="button"
               disabled={!canSave}
               onClick={save}
               style={{
-                padding: '12px 24px', 
-                borderRadius: 10,
+                width: '100%',
+                padding: '14px 20px', 
+                borderRadius: 12,
                 background: canSave ? '#0ea5e9' : '#2b4a58',
-                color: '#dff3ff', 
-                border: '1px solid #2aa3e0',
-                fontWeight: 800, 
+                color: '#fff', 
+                border: 'none',
+                fontWeight: 700, 
                 cursor: canSave ? 'pointer' : 'not-allowed',
                 WebkitTapHighlightColor: 'transparent', 
                 WebkitAppearance: 'none', 
@@ -635,16 +685,18 @@ export default function SessionPageV3() {
                 router.replace('/history')
               }}
               style={{
-                padding: '10px 22px', 
-                borderRadius: 10,
+                width: '100%',
+                padding: '12px 20px', 
+                borderRadius: 12,
                 background: '#2a2a2a', 
                 color: '#eee', 
                 border: '1px solid #555',
-                fontWeight: 800, 
+                fontWeight: 700, 
                 cursor: 'pointer',
                 WebkitTapHighlightColor: 'transparent', 
                 WebkitAppearance: 'none', 
-                touchAction: 'manipulation'
+                touchAction: 'manipulation',
+                fontSize: 15
               }}
             >
               End Session

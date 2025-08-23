@@ -105,18 +105,23 @@ export default function VideoAnalysisProgress({
           await new Promise(resolve => setTimeout(resolve, 1000))
           setProgress(prev => Math.min(prev + stepProgressIncrement / stepDuration, 100))
 
-          // フレーム解析中にシュート検出の模擬
-          if (i === 3 && Math.random() > 0.7) { // フレーム解析ステップで30%の確率
-            const newShot: ShotDetection = {
-              timestamp: Math.random() * videoDuration,
-              position: {
-                x: Math.random() * 340,
-                y: Math.random() * 240
-              },
-              result: Math.random() > 0.4 ? 'make' : 'miss',
-              confidence: Math.random() * 20 + 75 // 75-95%
+          // フレーム解析中にシュート検出の模擬（より多くのシュートを検出）
+          if (i === 3) { // フレーム解析ステップでシュートを検出
+            // 複数回チェックしてシュートを検出
+            for (let shot = 0; shot < 3; shot++) {
+              if (Math.random() > 0.3) { // 70%の確率でシュート検出
+                const newShot: ShotDetection = {
+                  timestamp: Math.random() * videoDuration,
+                  position: {
+                    x: Math.random() * 340,
+                    y: Math.random() * 240
+                  },
+                  result: Math.random() > 0.4 ? 'make' : 'miss',
+                  confidence: Math.random() * 20 + 75 // 75-95%
+                }
+                setDetectedShots(prev => [...prev, newShot])
+              }
             }
-            setDetectedShots(prev => [...prev, newShot])
           }
         }
 
@@ -133,9 +138,13 @@ export default function VideoAnalysisProgress({
       setIsCompleted(true)
       if (elapsedTimer) clearInterval(elapsedTimer)
 
-      // 2秒後に結果を返す
+      // 2秒後に結果を返す（現在のdetectedShotsを確実に渡す）
       setTimeout(() => {
-        onAnalysisComplete(detectedShots)
+        setDetectedShots(currentShots => {
+          console.log('解析完了 - 検出されたシュート数:', currentShots.length, currentShots)
+          onAnalysisComplete(currentShots)
+          return currentShots
+        })
       }, 2000)
     }
 

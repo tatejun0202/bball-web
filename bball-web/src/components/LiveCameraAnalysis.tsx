@@ -32,30 +32,61 @@ export default function LiveCameraAnalysis({ onRecordingComplete, onBack }: Live
 
   // カメラ起動
   const startCamera = useCallback(async () => {
+    console.log('カメラ起動を開始します...')
+    setError(null)
+    
     try {
+      // まずカメラの権限があるかを確認
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('このブラウザはカメラ機能をサポートしていません。')
+      }
+      
+      console.log('getUserMedia リクエストを送信中...')
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: 'environment' // 背面カメラを優先
+          facingMode: { ideal: 'environment' } // 背面カメラを優先（fallback対応）
         },
-        audio: true
+        audio: false // とりあえず音声は無しで試す
       })
 
+      console.log('カメラストリームを取得しました:', stream)
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         streamRef.current = stream
-        setIsStreamActive(true)
-        setError(null)
         
-        // 動画が再生可能になったら再生開始
+        // 動画が読み込まれたら再生開始
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().catch(console.error)
+          console.log('メタデータが読み込まれました。再生を開始します...')
+          videoRef.current?.play().then(() => {
+            console.log('動画の再生が開始されました')
+            setIsStreamActive(true)
+          }).catch((playError) => {
+            console.error('動画再生エラー:', playError)
+            setError('動画の再生に失敗しました。')
+          })
+        }
+        
+        // エラーハンドリング
+        videoRef.current.onerror = (videoError) => {
+          console.error('動画エラー:', videoError)
+          setError('動画の表示中にエラーが発生しました。')
         }
       }
     } catch (err) {
-      setError('カメラアクセスに失敗しました。カメラの権限を確認してください。')
-      console.error('Camera access error:', err)
+      console.error('カメラアクセスエラー:', err)
+      const error = err as DOMException
+      if (error.name === 'NotAllowedError') {
+        setError('カメラの使用が拒否されました。ブラウザの設定からカメラ権限を許可してください。')
+      } else if (error.name === 'NotFoundError') {
+        setError('カメラが見つかりません。デバイスにカメラが接続されていることを確認してください。')
+      } else if (error.name === 'NotSupportedError') {
+        setError('このブラウザではカメラ機能がサポートされていません。')
+      } else {
+        setError(`カメラアクセスに失敗しました: ${error.message || '不明なエラー'}`)
+      }
     }
   }, [])
 
