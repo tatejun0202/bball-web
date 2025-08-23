@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import FreePositionCourt from '@/components/FreePositionCourt'
 import { getSession } from '@/db/repositories'
-import { getSessionSummaryV2, getSessionPositions } from '@/db/repositories-v2'
+import { getSessionSummaryV2, getSessionPositions, getSessionShotsV3 } from '@/db/repositories-v2'
 import { SPOTS } from '@/constants/spots'
 import { detectArea, getAreaName } from '@/constants/court-areas'
 import type { Session } from '@/db/dexie'
@@ -16,6 +16,14 @@ export default function ResultClientV2({ sessionId }: { sessionId: number }) {
   const [session, setSession] = useState<Session | null>(null)
   const [positions, setPositions] = useState<PositionInfo[]>([])
   const [selectedPosition, setSelectedPosition] = useState<PositionInfo | null>(null)
+  const [individualShots, setIndividualShots] = useState<Array<{
+    id: number
+    position: { x: number; y: number }
+    result: 'make' | 'miss'
+    timestamp: number
+    attempts: number
+    makes: number
+  }>>([])
   const [summary, setSummary] = useState<{
     total: { attempts: number; makes: number; percentage: number }
     fixed: { attempts: number; makes: number; percentage: number }
@@ -30,15 +38,17 @@ export default function ResultClientV2({ sessionId }: { sessionId: number }) {
     (async () => setSession(await getSession(sessionId) ?? null))() 
   }, [sessionId])
 
-  // 位置データ・統計情報の読み込み
+  // 位置データ・統計情報・個別シュートの読み込み
   useEffect(() => {
     (async () => {
-      const [sessionSummary, positionMap] = await Promise.all([
+      const [sessionSummary, positionMap, shots] = await Promise.all([
         getSessionSummaryV2(sessionId),
-        getSessionPositions(sessionId)
+        getSessionPositions(sessionId),
+        getSessionShotsV3(sessionId)
       ])
       
       setSummary(sessionSummary)
+      setIndividualShots(shots)
       
       // 位置情報を PositionInfo[] 形式に変換
       const positionList: PositionInfo[] = []
@@ -177,13 +187,14 @@ export default function ResultClientV2({ sessionId }: { sessionId: number }) {
         </h3>
 
         <FreePositionCourt
-          width={Math.min(340, window.innerWidth - 32)}
+          width={typeof window !== 'undefined' ? Math.min(340, window.innerWidth - 32) : 340}
           mode="display"
           positions={positions}
           selectedPosition={selectedPosition}
           onPositionSelect={handlePositionSelect}
           flipY={true}
           showFixedSpots={false}
+          individualShots={individualShots}
         />
 
         {/* Selected area summary */}

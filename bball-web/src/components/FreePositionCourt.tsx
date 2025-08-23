@@ -15,6 +15,14 @@ type Props = {
   onFreePosition?: (x: number, y: number) => void      // 自由配置時のコールバック
   flipY?: boolean                                // 画像上下反転
   showFixedSpots?: boolean                       // 固定スポットも表示するか
+  individualShots?: Array<{                      // 個別シュートデータ（V3用）
+    id: number
+    position: { x: number; y: number }
+    result: 'make' | 'miss'
+    timestamp: number
+    attempts: number
+    makes: number
+  }>
 }
 
 const COURT_RATIO = 1095 / 768
@@ -27,7 +35,8 @@ export default function FreePositionCourt({
   onPositionSelect,
   onFreePosition,
   flipY = false,
-  showFixedSpots = true
+  showFixedSpots = true,
+  individualShots = []
 }: Props) {
   const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
@@ -217,6 +226,30 @@ export default function FreePositionCourt({
             }}
           />
         )}
+
+        {/* 個別シュート結果（V3用） */}
+        {individualShots && individualShots.map((shot, index) => (
+          <div
+            key={`shot-${shot.id}-${index}`}
+            style={{
+              position: 'absolute',
+              left: `${shot.position.x * 100}%`,
+              top: `${(flipY ? (1 - shot.position.y) : shot.position.y) * 100}%`,
+              transform: 'translate(-50%, -50%)',
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: shot.result === 'make' ? '#22c55e' : '#ef4444',
+              border: '1px solid rgba(255, 255, 255, 0.8)',
+              pointerEvents: 'none',
+              zIndex: 4,
+              opacity: 0.9,
+              boxShadow: shot.result === 'make' 
+                ? '0 0 4px rgba(34, 197, 94, 0.6)' 
+                : '0 0 4px rgba(239, 68, 68, 0.6)'
+            }}
+          />
+        ))}
 
         {/* 選択中の位置（オレンジの丸） */}
         {selectedPosition && (

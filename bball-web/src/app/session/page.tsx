@@ -7,6 +7,7 @@ import FreePositionCourt from '@/components/FreePositionCourt'
 import LiveCameraAnalysis from '@/components/LiveCameraAnalysis'
 import VideoUploadAnalysis from '@/components/VideoUploadAnalysis'
 import VideoAnalysisProgress from '@/components/VideoAnalysisProgress'
+import styles from './session.module.css'
 import { 
   getOrCreateActiveSession, 
   getSession, 
@@ -314,15 +315,7 @@ export default function SessionPageV3() {
   if (isFullScreenMode) {
     // フルスクリーンモード（カメラ、アップロード、解析画面）
     return (
-      <div style={{ 
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: '#1a1a1a',
-        zIndex: 1000
-      }}>
+      <div className={styles.fullScreenMode}>
         {/* V3: ライブカメラ解析画面 */}
         {analysisStep === 'camera-recording' && (
           <LiveCameraAnalysis
@@ -350,113 +343,56 @@ export default function SessionPageV3() {
 
         {/* V3: 解析結果レビュー画面 */}
         {analysisStep === 'results-review' && (
-          <div style={{ 
-            height: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '20px 16px',
-            background: '#1a1a1a',
-            color: '#fff',
-            overflow: 'auto'
-          }}>
-            <div style={{ 
-              background: '#222',
-              borderRadius: 12,
-              padding: '24px 16px',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center'
-            }}>
-              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20, textAlign: 'center' }}>
+          <div className={styles.resultsContainer}>
+            <div className={styles.resultsContent}>
+              <h3 className={styles.resultsTitle}>
                 🎯 解析完了！
               </h3>
               
-              <div style={{ 
-                background: '#10b981',
-                color: '#fff',
-                padding: 20,
-                borderRadius: 12,
-                textAlign: 'center',
-                marginBottom: 16
-              }}>
-                <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
+              <div className={styles.resultsStats}>
+                <div className={styles.resultsStatsMain}>
                   {detectedShots.length}個のシュートを検出
                 </div>
-                <div style={{ fontSize: 16, opacity: 0.9 }}>
+                <div className={styles.resultsStatsSub}>
                   成功: {detectedShots.filter(s => s.result === 'make').length}回 / 
                   失敗: {detectedShots.filter(s => s.result === 'miss').length}回
                 </div>
               </div>
 
-              <div style={{
-                background: 'rgba(14, 165, 233, 0.1)',
-                border: '1px solid rgba(14, 165, 233, 0.2)',
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 20,
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: 14, color: '#0ea5e9', fontWeight: 600 }}>
+              <div className={styles.resultsSessionInfo}>
+                <div className={styles.resultsSessionTitle}>
                   📊 セッション: {title}
                 </div>
-                <div style={{ fontSize: 12, color: '#9aa', marginTop: 4 }}>
+                <div className={styles.resultsSessionSubtitle}>
                   新しいセッションとして保存されました
                 </div>
               </div>
 
-              <div style={{ 
-                display: 'flex',
-                gap: 12,
-                marginBottom: 20
-              }}>
+              <div className={styles.resultsButtonRow}>
                 <button
                   onClick={() => {
+                    if (sessionId) {
+                      router.push(`/result/${sessionId}`)
+                    }
+                  }}
+                  className={`${styles.primaryButton} ${styles.primaryButtonEnabled}`}
+                >
+                  結果を見る
+                </button>
+                <button
+                  onClick={async () => {
                     resetAnalysisFlow()
                     setRecordingMode('manual')
+                    // 解析完了後は新しい手動セッションに切り替える
+                    await createNewSessionForRecording('手動記録')
                   }}
-                  style={{
-                    flex: 1,
-                    padding: '16px 20px',
-                    borderRadius: 12,
-                    background: '#666',
-                    color: '#fff',
-                    border: 'none',
-                    fontWeight: 600,
-                    fontSize: 16,
-                    cursor: 'pointer',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
+                  className={styles.secondaryButton}
                 >
                   手動モードに戻る
                 </button>
-                <button
-                  onClick={resetAnalysisFlow}
-                  style={{
-                    flex: 1,
-                    padding: '16px 20px',
-                    borderRadius: 12,
-                    background: '#0ea5e9',
-                    color: '#fff',
-                    border: 'none',
-                    fontWeight: 600,
-                    fontSize: 16,
-                    cursor: 'pointer',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
-                >
-                  新しい解析
-                </button>
               </div>
 
-              <div style={{ 
-                padding: 16,
-                background: 'rgba(16, 185, 129, 0.1)',
-                borderRadius: 8,
-                fontSize: 14,
-                color: '#10b981',
-                textAlign: 'center'
-              }}>
+              <div className={styles.resultsFinalMessage}>
                 ✅ シュートデータは自動でセッションに保存されました
               </div>
             </div>
@@ -468,15 +404,9 @@ export default function SessionPageV3() {
 
   // 通常モード（モード選択画面）
   return (
-    <main className="page-fit" style={{ 
-      display: 'flex',
-      flexDirection: 'column',
-      height: 'calc(100vh - 60px)', // フッターの高さを考慮
-      padding: '12px 16px 16px 16px',
-      overflow: 'hidden'
-    }}>
+    <main className={`page-fit ${styles.pageContainer}`}>
       {/* タイトル行（ペンで編集） */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexShrink: 0 }}>
+      <div className={styles.titleSection}>
         <div>
           {editingTitle ? (
             <input
@@ -485,68 +415,32 @@ export default function SessionPageV3() {
               onBlur={commitTitle}
               onKeyDown={e => { if (e.key === 'Enter') commitTitle() }}
               autoFocus
-              style={{
-                fontSize: 24, fontWeight: 800, padding: '2px 6px',
-                border: '1px solid #555', borderRadius: 4, background: '#222', color: '#fff'
-              }}
+              className={styles.titleInput}
             />
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ fontSize: 24, fontWeight: 800 }}>{title}</div>
+            <div className={styles.titleContainer}>
+              <div className={styles.titleText}>{title}</div>
               <button
                 type="button"
                 onClick={() => setEditingTitle(true)}
                 aria-label="edit title"
-                style={{ 
-                  background: 'none', border: 'none', cursor: 'pointer', 
-                  color: '#9aa', fontSize: 18, WebkitTapHighlightColor: 'transparent' 
-                }}
+                className={styles.editButton}
               >✏️</button>
             </div>
           )}
-          <div style={{ color: '#9aa', marginTop: 4 }}>{dateLabel}</div>
+          <div className={styles.dateLabel}>{dateLabel}</div>
         </div>
       </div>
 
       {/* V3: 録画モード選択ドロップダウン */}
-      <div style={{ 
-        marginTop: 12, 
-        marginBottom: 12, 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 12,
-        padding: '0 4px',
-        flexShrink: 0
-      }}>
-        <label style={{ 
-          fontSize: 14, 
-          fontWeight: 600, 
-          color: '#b9b9b9',
-          minWidth: 80
-        }}>
+      <div className={styles.modeSelection}>
+        <label className={styles.modeLabel}>
           記録モード:
         </label>
         <select
           value={recordingMode}
           onChange={(e) => setRecordingMode(e.target.value as RecordingMode)}
-          style={{
-            flex: 1,
-            height: 40,
-            padding: '0 12px',
-            borderRadius: 8,
-            border: '1px solid #555',
-            background: '#222',
-            color: '#fff',
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: 'pointer',
-            WebkitAppearance: 'none',
-            MozAppearance: 'none',
-            appearance: 'none',
-            backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23999'%3E%3Cpath d='M6 9L1.5 4.5h9z'/%3E%3C/svg%3E")`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'right 12px center'
-          }}
+          className={styles.modeSelect}
         >
           <option value="manual">手動記録</option>
           <option value="live">ライブ解析</option>
@@ -556,50 +450,20 @@ export default function SessionPageV3() {
 
       {/* 各モードに応じたコンテンツ表示 */}
       {recordingMode === 'manual' && (
-        <>
+        <div className={styles.manualModeContainer}>
           {/* コート */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className={styles.courtContainer}>
+            <div className={styles.courtWrapper}>
               {/* トグルボタン（コート右上外側） */}
-              <div style={{
-                position: 'absolute',
-                top: -40,
-                right: 0,
-                zIndex: 10,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '4px 8px',
-                background: 'rgba(28, 28, 28, 0.9)',
-                borderRadius: 16,
-                fontSize: 12,
-                fontWeight: 600
-              }}>
-                <span style={{ color: showFixedSpots ? '#ddd' : '#9aa' }}>Spot Mode</span>
+              <div className={styles.toggleContainer}>
+                <span className={showFixedSpots ? styles.toggleTextActive : styles.toggleText}>
+                  Spot Mode
+                </span>
                 <button
                   onClick={handleSpotModeToggle}
-                  style={{
-                    width: 40,
-                    height: 20,
-                    borderRadius: 10,
-                    border: 'none',
-                    background: showFixedSpots ? '#0ea5e9' : '#555',
-                    position: 'relative',
-                    cursor: 'pointer',
-                    transition: 'background 0.2s ease',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
+                  className={`${styles.toggleButton} ${showFixedSpots ? styles.toggleButtonActive : ''}`}
                 >
-                  <div style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: '50%',
-                    background: '#fff',
-                    position: 'absolute',
-                    top: 2,
-                    left: showFixedSpots ? 22 : 2,
-                    transition: 'left 0.2s ease'
-                  }} />
+                  <div className={`${styles.toggleHandle} ${showFixedSpots ? styles.toggleHandleActive : ''}`} />
                 </button>
               </div>
               
@@ -616,16 +480,7 @@ export default function SessionPageV3() {
           </div>
 
           {/* Attempt / Make：直接入力（text+numeric）＋ ± */}
-          <div style={{ 
-            marginTop: 10, 
-            display: 'grid', 
-            gap: 8, 
-            width: '100%', 
-            maxWidth: 'min(360px, calc(100vw - 32px))', 
-            marginInline: 'auto',
-            flexShrink: 0,
-            padding: '0 4px'
-          }}>
+          <div className={styles.inputSection}>
             <Row
               label="Attempt"
               value={attemptsStr}
@@ -643,35 +498,12 @@ export default function SessionPageV3() {
           </div>
 
           {/* Enter / End Session */}
-          <div style={{ 
-            marginTop: 10, 
-            textAlign: 'center', 
-            display: 'grid', 
-            gap: 6, 
-            width: '100%',
-            maxWidth: 'min(280px, calc(100vw - 32px))', 
-            marginInline: 'auto',
-            flexShrink: 0,
-            paddingBottom: 4
-          }}>
+          <div className={styles.buttonSection}>
             <button
               type="button"
               disabled={!canSave}
               onClick={save}
-              style={{
-                width: '100%',
-                padding: '14px 20px', 
-                borderRadius: 12,
-                background: canSave ? '#0ea5e9' : '#2b4a58',
-                color: '#fff', 
-                border: 'none',
-                fontWeight: 700, 
-                cursor: canSave ? 'pointer' : 'not-allowed',
-                WebkitTapHighlightColor: 'transparent', 
-                WebkitAppearance: 'none', 
-                touchAction: 'manipulation',
-                fontSize: 16
-              }}
+              className={`${styles.primaryButton} ${canSave ? styles.primaryButtonEnabled : styles.primaryButtonDisabled}`}
             >
               {selectedPosition ? 'Enter' : '位置を選択してください'}
             </button>
@@ -684,63 +516,27 @@ export default function SessionPageV3() {
                 await endSession(sessionId)
                 router.replace('/history')
               }}
-              style={{
-                width: '100%',
-                padding: '12px 20px', 
-                borderRadius: 12,
-                background: '#2a2a2a', 
-                color: '#eee', 
-                border: '1px solid #555',
-                fontWeight: 700, 
-                cursor: 'pointer',
-                WebkitTapHighlightColor: 'transparent', 
-                WebkitAppearance: 'none', 
-                touchAction: 'manipulation',
-                fontSize: 15
-              }}
+              className={styles.secondaryButton}
             >
               End Session
             </button>
           </div>
-        </>
+        </div>
       )}
 
       {/* ライブ解析モード */}
       {recordingMode === 'live' && analysisStep === 'mode-selection' && (
-        <div style={{ 
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          textAlign: 'center',
-          padding: '24px 16px',
-          border: '2px dashed #555',
-          borderRadius: 12,
-          background: 'rgba(34, 34, 34, 0.5)',
-          margin: '16px 0'
-        }}>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#0ea5e9', marginBottom: 12 }}>
+        <div className={styles.modeCard}>
+          <div className={`${styles.modeCardTitle} ${styles.modeCardTitleLive}`}>
             📹 ライブ解析モード
           </div>
-          <div style={{ fontSize: 14, color: '#b9b9b9', marginBottom: 20, lineHeight: 1.5 }}>
+          <div className={styles.modeCardDescription}>
             カメラを起動してリアルタイムで<br />
             シュートを自動解析・記録します
           </div>
           <button
             type="button"
-            style={{
-              padding: '12px 24px',
-              borderRadius: 10,
-              background: '#0ea5e9',
-              color: '#fff',
-              border: 'none',
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontSize: 16,
-              WebkitTapHighlightColor: 'transparent',
-              WebkitAppearance: 'none',
-              touchAction: 'manipulation'
-            }}
+            className={`${styles.modeCardButton} ${styles.modeCardButtonLive}`}
             onClick={() => setAnalysisStep('camera-recording')}
           >
             カメラを起動
@@ -750,40 +546,17 @@ export default function SessionPageV3() {
 
       {/* 動画アップロードモード */}
       {recordingMode === 'upload' && analysisStep === 'mode-selection' && (
-        <div style={{ 
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          textAlign: 'center',
-          padding: '24px 16px',
-          border: '2px dashed #555',
-          borderRadius: 12,
-          background: 'rgba(34, 34, 34, 0.5)',
-          margin: '16px 0'
-        }}>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#10b981', marginBottom: 12 }}>
+        <div className={styles.modeCard}>
+          <div className={`${styles.modeCardTitle} ${styles.modeCardTitleUpload}`}>
             📁 動画アップロードモード
           </div>
-          <div style={{ fontSize: 14, color: '#b9b9b9', marginBottom: 20, lineHeight: 1.5 }}>
+          <div className={styles.modeCardDescription}>
             撮影済みの練習動画をアップロードして<br />
             自動解析・記録を行います
           </div>
           <button
             type="button"
-            style={{
-              padding: '12px 24px',
-              borderRadius: 10,
-              background: '#10b981',
-              color: '#fff',
-              border: 'none',
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontSize: 16,
-              WebkitTapHighlightColor: 'transparent',
-              WebkitAppearance: 'none',
-              touchAction: 'manipulation'
-            }}
+            className={`${styles.modeCardButton} ${styles.modeCardButtonUpload}`}
             onClick={() => setAnalysisStep('video-upload')}
           >
             動画を選択
@@ -793,12 +566,7 @@ export default function SessionPageV3() {
 
       {/* 共通: End Session ボタン（V3機能用） */}
       {recordingMode !== 'manual' && analysisStep === 'mode-selection' && (
-        <div style={{ 
-          marginTop: 16, 
-          textAlign: 'center',
-          flexShrink: 0,
-          paddingBottom: 8
-        }}>
+        <div className={styles.buttonSection}>
           <button
             type="button"
             disabled={!sessionId}
@@ -807,18 +575,7 @@ export default function SessionPageV3() {
               await endSession(sessionId)
               router.replace('/history')
             }}
-            style={{
-              padding: '12px 24px', 
-              borderRadius: 10,
-              background: '#2a2a2a', 
-              color: '#eee', 
-              border: '1px solid #555',
-              fontWeight: 700, 
-              cursor: 'pointer',
-              WebkitTapHighlightColor: 'transparent', 
-              WebkitAppearance: 'none', 
-              touchAction: 'manipulation'
-            }}
+            className={styles.secondaryButton}
           >
             End Session
           </button>
@@ -838,49 +595,22 @@ function Row({
   onChange: (v: string) => void
 }) {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '88px minmax(0,1fr) 40px 40px',
-        alignItems: 'center',
-        gap: 10,
-        width: '100%'
-      }}
-    >
-      <div style={{ color: '#b9b9b9', textAlign: 'left' }}>{label}</div>
+    <div className={styles.inputRow}>
+      <div className={styles.inputLabel}>{label}</div>
       <input
         type="text"
         inputMode="numeric"
         pattern="\d*"
         value={value}
         onChange={e => onChange(e.target.value)}
-        style={{
-          height: 38,
-          border: '1px solid #555',
-          borderRadius: 8,
-          background: '#222',
-          color: '#fff',
-          textAlign: 'center',
-          fontSize: 18,
-          fontWeight: 700,
-          width: '100%',
-          boxSizing: 'border-box'
-        }}
+        className={styles.inputField}
       />
-      <button type="button" onClick={onMinus}
-        style={{ 
-          height: 38, borderRadius: 8, background: 'none', 
-          border: '1px solid #777', color: '#ddd', fontSize: 18, cursor: 'pointer',
-          WebkitTapHighlightColor: 'transparent', WebkitAppearance: 'none', touchAction: 'manipulation' 
-        }}
-      >－</button>
-      <button type="button" onClick={onPlus}
-        style={{ 
-          height: 38, borderRadius: 8, background: 'none', 
-          border: '1px solid #777', color: '#ddd', fontSize: 18, cursor: 'pointer',
-          WebkitTapHighlightColor: 'transparent', WebkitAppearance: 'none', touchAction: 'manipulation' 
-        }}
-      >＋</button>
+      <button type="button" onClick={onMinus} className={styles.inputButton}>
+        －
+      </button>
+      <button type="button" onClick={onPlus} className={styles.inputButton}>
+        ＋
+      </button>
     </div>
   )
 }

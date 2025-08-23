@@ -1,0 +1,505 @@
+/* Session Page Responsive Design */
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px);
+  padding: 8px 12px 12px 12px;
+  overflow: hidden;
+}
+
+.fullScreenMode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #1a1a1a;
+  z-index: 1000;
+}
+
+/* Header Section */
+.titleSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.titleContainer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.titleText {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.titleInput {
+  font-size: 18px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.editButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9aa;
+  font-size: 16px;
+  webkit-tap-highlight-color: transparent;
+}
+
+.dateLabel {
+  color: #9aa;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Mode Selection */
+.modeSelection {
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.modeLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #b9b9b9;
+  min-width: 60px;
+  white-space: nowrap;
+}
+
+.modeSelect {
+  flex: 1;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #222;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  webkit-appearance: none;
+  moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23999'%3E%3Cpath d='M6 9L1.5 4.5h9z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+/* Manual Mode */
+.manualModeContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.courtContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
+.courtWrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.toggleContainer {
+  position: absolute;
+  top: -32px;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  background: rgba(28, 28, 28, 0.9);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.toggleText {
+  color: #9aa;
+}
+
+.toggleTextActive {
+  color: #ddd;
+}
+
+.toggleButton {
+  width: 32px;
+  height: 16px;
+  border-radius: 8px;
+  border: none;
+  background: #555;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  webkit-tap-highlight-color: transparent;
+}
+
+.toggleButtonActive {
+  background: #0ea5e9;
+}
+
+.toggleHandle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.2s ease;
+}
+
+.toggleHandleActive {
+  left: 18px;
+}
+
+/* Input Section */
+.inputSection {
+  margin: 8px 0;
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  max-width: min(360px, calc(100vw - 24px));
+  margin-inline: auto;
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
+.inputRow {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) 32px 32px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.inputLabel {
+  color: #b9b9b9;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.inputField {
+  height: 32px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #222;
+  color: #fff;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inputButton {
+  height: 32px;
+  border-radius: 6px;
+  background: none;
+  border: 1px solid #777;
+  color: #ddd;
+  font-size: 16px;
+  cursor: pointer;
+  webkit-tap-highlight-color: transparent;
+  webkit-appearance: none;
+  touch-action: manipulation;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Button Section */
+.buttonSection {
+  margin: 8px 0 4px 0;
+  text-align: center;
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  max-width: min(280px, calc(100vw - 24px));
+  margin-inline: auto;
+  flex-shrink: 0;
+}
+
+.primaryButton {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  webkit-tap-highlight-color: transparent;
+  webkit-appearance: none;
+  touch-action: manipulation;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.primaryButtonEnabled {
+  background: #0ea5e9;
+  color: #fff;
+}
+
+.primaryButtonDisabled {
+  background: #2b4a58;
+  color: #fff;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #2a2a2a;
+  color: #eee;
+  border: 1px solid #555;
+  font-weight: 700;
+  cursor: pointer;
+  webkit-tap-highlight-color: transparent;
+  webkit-appearance: none;
+  touch-action: manipulation;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+/* Mode Cards */
+.modeCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  padding: 20px 16px;
+  border: 2px dashed #555;
+  border-radius: 12px;
+  background: rgba(34, 34, 34, 0.5);
+  margin: 12px 0;
+}
+
+.modeCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.modeCardTitleLive {
+  color: #0ea5e9;
+}
+
+.modeCardTitleUpload {
+  color: #10b981;
+}
+
+.modeCardDescription {
+  font-size: 12px;
+  color: #b9b9b9;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.modeCardButton {
+  padding: 12px 20px;
+  border-radius: 10px;
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  webkit-tap-highlight-color: transparent;
+  webkit-appearance: none;
+  touch-action: manipulation;
+}
+
+.modeCardButtonLive {
+  background: #0ea5e9;
+}
+
+.modeCardButtonUpload {
+  background: #10b981;
+}
+
+/* Results Screen */
+.resultsContainer {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  background: #1a1a1a;
+  color: #fff;
+  overflow: auto;
+}
+
+.resultsContent {
+  background: #222;
+  border-radius: 12px;
+  padding: 20px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.resultsTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.resultsStats {
+  background: #10b981;
+  color: #fff;
+  padding: 16px;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.resultsStatsMain {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.resultsStatsSub {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.resultsSessionInfo {
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.resultsSessionTitle {
+  font-size: 12px;
+  color: #0ea5e9;
+  font-weight: 600;
+}
+
+.resultsSessionSubtitle {
+  font-size: 11px;
+  color: #9aa;
+  margin-top: 3px;
+}
+
+.resultsButtonRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.resultsFinalMessage {
+  padding: 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #10b981;
+  text-align: center;
+}
+
+/* Responsive Adjustments */
+@media (max-height: 700px) {
+  .pageContainer {
+    padding: 6px 10px 10px 10px;
+  }
+  
+  .titleText, .titleInput {
+    font-size: 16px;
+  }
+  
+  .inputSection {
+    gap: 4px;
+  }
+  
+  .inputRow {
+    grid-template-columns: 60px minmax(0, 1fr) 30px 30px;
+    gap: 6px;
+  }
+  
+  .inputField, .inputButton {
+    height: 28px;
+  }
+  
+  .inputLabel {
+    font-size: 11px;
+  }
+  
+  .buttonSection {
+    gap: 4px;
+    margin: 6px 0 2px 0;
+  }
+  
+  .primaryButton {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .secondaryButton {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+}
+
+@media (max-height: 600px) {
+  .modeSelection {
+    margin: 4px 0;
+  }
+  
+  .modeLabel {
+    font-size: 11px;
+  }
+  
+  .modeSelect {
+    height: 32px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .inputRow {
+    grid-template-columns: 50px minmax(0, 1fr) 28px 28px;
+    gap: 4px;
+  }
+  
+  .inputLabel {
+    font-size: 10px;
+  }
+  
+  .inputField {
+    font-size: 14px;
+  }
+}

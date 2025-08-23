@@ -1,5 +1,6 @@
 // src/db/repositories-v2.ts
 import { db } from './dexie'
+import { SPOTS } from '@/constants/spots'
 import type { NewDrillResult } from './types'
 
 // V2: 自由配置対応のデータ保存
@@ -38,6 +39,63 @@ export async function addDrillResultV2(input: NewDrillResult, sessionMode: 'spot
 // セッションモードの更新
 export async function updateSessionMode(sessionId: number, mode: 'spot' | 'free') {
   await db.sessions.update(sessionId, { mode })
+}
+
+// セッションの全個別シュートデータ取得（V3用）
+export async function getSessionShotsV3(sessionId: number) {
+  const results = await db.drillResults
+    .where('sessionId')
+    .equals(sessionId)
+    .toArray()
+  
+  const shots: Array<{
+    id: number
+    position: { x: number; y: number }
+    result: 'make' | 'miss'
+    timestamp: number
+    attempts: number
+    makes: number
+  }> = []
+  
+  results.forEach(result => {
+    if (result.positionType === 'free' && result.freeX !== undefined && result.freeY !== undefined) {
+      // 自由配置の個別記録
+      const attemptCount = result.attempts || 1
+      const makeCount = result.makes || 0
+      
+      // 各試投を個別に記録として展開
+      for (let i = 0; i < attemptCount; i++) {
+        shots.push({
+          id: result.id!,
+          position: { x: result.freeX, y: result.freeY },
+          result: i < makeCount ? 'make' : 'miss',
+          timestamp: result.createdAt || Date.now(),
+          attempts: result.attempts || 0,
+          makes: result.makes || 0
+        })
+      }
+    } else if (result.positionType === 'fixed' && result.spotId !== undefined) {
+      // 固定スポットの記録
+      const spot = SPOTS.find(s => s.id === result.spotId)
+      if (spot) {
+        const attemptCount = result.attempts || 1
+        const makeCount = result.makes || 0
+        
+        for (let i = 0; i < attemptCount; i++) {
+          shots.push({
+            id: result.id!,
+            position: { x: spot.x, y: spot.y },
+            result: i < makeCount ? 'make' : 'miss',
+            timestamp: result.createdAt || Date.now(),
+            attempts: result.attempts || 0,
+            makes: result.makes || 0
+          })
+        }
+      }
+    }
+  })
+  
+  return shots.sort((a, b) => a.timestamp - b.timestamp)
 }
 
 // セッションの全ポジション取得（固定+自由配置）
