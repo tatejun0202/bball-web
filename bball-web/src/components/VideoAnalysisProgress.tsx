@@ -155,7 +155,7 @@ export default function VideoAnalysisProgress({
       if (stepTimer) clearInterval(stepTimer)
       if (elapsedTimer) clearInterval(elapsedTimer)
     }
-  }, [videoBlob, onAnalysisComplete])
+  }, [videoBlob, onAnalysisComplete, steps.length])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)

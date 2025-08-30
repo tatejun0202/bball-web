@@ -1,7 +1,7 @@
 import type { AnalysisConfig, AnalysisFrame, AnalysisResult } from './types'
 
 interface PendingRequest {
-  resolve: (data: any) => void
+  resolve: (data: unknown) => void
   reject: (error: Error) => void
 }
 
@@ -64,7 +64,7 @@ export class WorkerManager {
     this.isInitialized = false
   }
 
-  private sendMessage(type: string, data?: any): Promise<any> {
+  private sendMessage(type: string, data?: unknown): Promise<unknown> {
     return new Promise((resolve, reject) => {
       if (!this.worker) {
         reject(new Error('WebWorker not available'))
@@ -103,7 +103,7 @@ export class WorkerManager {
       throw new Error('Worker not initialized')
     }
 
-    return await this.sendMessage('analyze-frame', { imageData, timestamp })
+    return await this.sendMessage('analyze-frame', { imageData, timestamp }) as AnalysisFrame
   }
 
   // フレームバイフレーム解析用のヘルパー
@@ -125,7 +125,7 @@ export class WorkerManager {
     canvas.height = video.videoHeight
 
     const duration = video.duration
-    const frameRate = 30 // 仮定
+    // const frameRate = 30 // 仮定
     const analysisFrameRate = 5 // 5fps で解析
     const frameInterval = 1 / analysisFrameRate
     const totalFrames = Math.floor(duration * analysisFrameRate)

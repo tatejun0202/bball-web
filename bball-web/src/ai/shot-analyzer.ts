@@ -6,7 +6,8 @@ import type {
   AnalysisFrame, 
   AnalysisConfig,
   ShotEvent,
-  BallPosition
+  BallPosition,
+  TrajectoryPoint
 } from './types';
 
 export class ShotAnalyzer {
@@ -390,7 +391,7 @@ export class ShotAnalyzer {
     });
   }
 
-  private removeOutliers(trajectory: any[]): any[] {
+  private removeOutliers(trajectory: TrajectoryPoint[]): TrajectoryPoint[] {
     if (trajectory.length < 5) return trajectory;
     
     // 速度ベースの異常値検出
@@ -416,7 +417,7 @@ export class ShotAnalyzer {
     });
   }
 
-  private smoothTrajectory(trajectory: any[]): any[] {
+  private smoothTrajectory(trajectory: TrajectoryPoint[]): TrajectoryPoint[] {
     if (trajectory.length < 3) return trajectory;
     
     // 移動平均による平滑化

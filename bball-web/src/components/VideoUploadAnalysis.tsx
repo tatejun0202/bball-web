@@ -23,23 +23,6 @@ export default function VideoUploadAnalysis({ onVideoSelected, onBack }: VideoUp
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // ファイル選択
-  const handleFileSelect = useCallback((file: File) => {
-    if (!file.type.startsWith('video/')) {
-      setError('動画ファイルを選択してください（MP4, MOV, WebM対応）')
-      return
-    }
-
-    if (file.size > 1.5 * 1024 * 1024 * 1024) { // 1.5GB制限
-      setError('ファイルサイズが大きすぎます（最大1.5GB）')
-      return
-    }
-
-    setSelectedFile(file)
-    setError(null)
-    analyzeVideo(file)
-  }, [])
-
   // 動画品質解析
   const analyzeVideo = useCallback(async (file: File) => {
     setIsAnalyzing(true)
@@ -107,6 +90,23 @@ export default function VideoUploadAnalysis({ onVideoSelected, onBack }: VideoUp
       setIsAnalyzing(false)
     }
   }, [])
+
+  // ファイル選択
+  const handleFileSelect = useCallback((file: File) => {
+    if (!file.type.startsWith('video/')) {
+      setError('動画ファイルを選択してください（MP4, MOV, WebM対応）')
+      return
+    }
+
+    if (file.size > 1.5 * 1024 * 1024 * 1024) { // 1.5GB制限
+      setError('ファイルサイズが大きすぎます（最大1.5GB）')
+      return
+    }
+
+    setSelectedFile(file)
+    setError(null)
+    analyzeVideo(file)
+  }, [analyzeVideo])
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)

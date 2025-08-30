@@ -1,16 +1,16 @@
 import { ShotAnalyzer } from './shot-analyzer'
-import type { AnalysisConfig, AnalysisResult, ShotEvent } from './types'
+import type { AnalysisConfig } from './types'
 
 interface WorkerMessage {
   id: string
   type: 'initialize' | 'analyze-video' | 'analyze-frame' | 'dispose'
-  data?: any
+  data?: unknown
 }
 
 interface WorkerResponse {
   id: string
   type: 'success' | 'error' | 'progress'
-  data?: any
+  data?: unknown
 }
 
 class ShotAnalyzerWorker {
@@ -27,16 +27,16 @@ class ShotAnalyzerWorker {
     try {
       switch (type) {
         case 'initialize':
-          await this.initialize(data?.config)
+          await this.initialize((data as { config?: Partial<AnalysisConfig> })?.config)
           this.postMessage({ id, type: 'success', data: { initialized: true } })
           break
 
         case 'analyze-video':
-          await this.analyzeVideo(id, data?.videoUrl, data?.config)
+          await this.analyzeVideo(id, (data as { videoUrl: string })?.videoUrl, (data as { config?: Partial<AnalysisConfig> })?.config)
           break
 
         case 'analyze-frame':
-          const frame = await this.analyzeFrame(data?.imageData, data?.timestamp)
+          const frame = await this.analyzeFrame((data as { imageData: ImageData })?.imageData, (data as { timestamp: number })?.timestamp)
           this.postMessage({ id, type: 'success', data: frame })
           break
 
@@ -65,7 +65,8 @@ class ShotAnalyzerWorker {
     this.isInitialized = true
   }
 
-  private async analyzeVideo(messageId: string, videoUrl: string, config?: Partial<AnalysisConfig>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private async analyzeVideo(messageId: string, _videoUrl: string, _config?: Partial<AnalysisConfig>) {
     if (!this.analyzer) throw new Error('Analyzer not initialized')
 
     // WebWorker内でのビデオ解析は複雑なため、代替アプローチを使用
@@ -87,7 +88,7 @@ class ShotAnalyzerWorker {
 
     ctx.putImageData(imageData, 0, 0)
     
-    return await this.analyzer.analyzeCanvasFrame(canvas as any, timestamp)
+    return await this.analyzer.analyzeCanvasFrame(canvas as unknown as HTMLCanvasElement, timestamp)
   }
 
   private dispose() {

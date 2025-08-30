@@ -4,10 +4,10 @@ import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import FreePositionCourt from '@/components/FreePositionCourt'
-import LiveCameraAnalysis from '@/components/LiveCameraAnalysis'
+// import LiveCameraAnalysis from '@/components/LiveCameraAnalysis'
 import V3LiveAnalysis from '@/components/V3LiveAnalysis'
 import V3VideoUpload from '@/components/V3VideoUpload'
-import VideoUploadAnalysis from '@/components/VideoUploadAnalysis'
+// import VideoUploadAnalysis from '@/components/VideoUploadAnalysis'
 import VideoAnalysisProgress from '@/components/VideoAnalysisProgress'
 import styles from './session.module.css'
 import { 
@@ -66,9 +66,9 @@ export default function SessionPageV3() {
   const [analysisStep, setAnalysisStep] = useState<AnalysisStep>('mode-selection')
   const [currentVideoBlob, setCurrentVideoBlob] = useState<Blob | null>(null)
   const [currentVideoFile, setCurrentVideoFile] = useState<File | null>(null)
-  const [videoQualityCheck, setVideoQualityCheck] = useState<VideoQualityCheck | null>(null)
+  // const [videoQualityCheck, setVideoQualityCheck] = useState<VideoQualityCheck | null>(null)
   const [detectedShots, setDetectedShots] = useState<ShotDetection[]>([])
-  const [isAnalysisComplete, setIsAnalysisComplete] = useState(false)
+  // const [isAnalysisComplete, setIsAnalysisComplete] = useState(false)
   
   // 選択中の位置情報
   const [selectedPosition, setSelectedPosition] = useState<PositionInfo | null>(null)
@@ -153,7 +153,7 @@ export default function SessionPageV3() {
   // 自由配置時の処理
   const handleFreePosition = (x: number, y: number) => {
     // エリアを自動判定
-    const area = detectArea(x, y)
+    // const area = detectArea(x, y)
     
     const newPosition: PositionInfo = {
       type: 'free',
@@ -192,27 +192,27 @@ export default function SessionPageV3() {
     // 新しいセッションを作成
     await createNewSessionForRecording(`AI 動画解析: ${file.name}`)
     setCurrentVideoFile(file)
-    setVideoQualityCheck(qualityCheck)
+    // setVideoQualityCheck(qualityCheck)
     // AI解析結果を直接処理
     await handleAnalysisComplete(shots)
   }
 
   // V3: ライブカメラ録画完了の処理（従来版）
-  const handleLiveCameraComplete = async (videoBlob: Blob) => {
-    // 新しいセッションを作成
-    await createNewSessionForRecording('ライブ録画')
-    setCurrentVideoBlob(videoBlob)
-    setAnalysisStep('analysis-progress')
-  }
+  // const handleLiveCameraComplete = async (videoBlob: Blob) => {
+  //   // 新しいセッションを作成
+  //   await createNewSessionForRecording('ライブ録画')
+  //   setCurrentVideoBlob(videoBlob)
+  //   setAnalysisStep('analysis-progress')
+  // }
 
   // V3: 動画アップロード選択の処理（従来版）
-  const handleVideoUploadSelected = async (file: File, qualityCheck: VideoQualityCheck) => {
-    // 新しいセッションを作成
-    await createNewSessionForRecording(`動画アップロード: ${file.name}`)
-    setCurrentVideoFile(file)
-    setVideoQualityCheck(qualityCheck)
-    setAnalysisStep('analysis-progress')
-  }
+  // const handleVideoUploadSelected = async (file: File, qualityCheck: VideoQualityCheck) => {
+  //   // 新しいセッションを作成
+  //   await createNewSessionForRecording(`動画アップロード: ${file.name}`)
+  //   setCurrentVideoFile(file)
+  //   setVideoQualityCheck(qualityCheck)
+  //   setAnalysisStep('analysis-progress')
+  // }
 
   // V3: 録画・動画用の新セッション作成
   const createNewSessionForRecording = async (sessionName: string) => {
@@ -264,7 +264,7 @@ export default function SessionPageV3() {
     }).filter(shot => shot.result !== ('unknown' as 'make' | 'miss')) // unknown結果を除外
 
     setDetectedShots(convertedShots)
-    setIsAnalysisComplete(true)
+    // setIsAnalysisComplete(true)
     
     // 検出されたシュートをV2システムに保存
     if (sessionId && convertedShots.length > 0) {
@@ -295,9 +295,9 @@ export default function SessionPageV3() {
     setAnalysisStep('mode-selection')
     setCurrentVideoBlob(null)
     setCurrentVideoFile(null)
-    setVideoQualityCheck(null)
+    // setVideoQualityCheck(null)
     setDetectedShots([])
-    setIsAnalysisComplete(false)
+    // setIsAnalysisComplete(false)
   }
 
   // データ保存（手動モード用）

@@ -5,7 +5,7 @@ import FreePositionCourt from '@/components/FreePositionCourt'
 import { getSession } from '@/db/repositories'
 import { getSessionSummaryV2, getSessionPositions, getSessionShotsV3 } from '@/db/repositories-v2'
 import { SPOTS } from '@/constants/spots'
-import { detectArea, getAreaName } from '@/constants/court-areas'
+// import { getAreaName } from '@/constants/court-areas'
 import type { Session } from '@/db/dexie'
 import type { PositionInfo } from '@/db/types'
 import { useEdgeSwipeToHistory } from '@/hooks/useEdgeSwipeToHistory'
@@ -115,11 +115,11 @@ export default function ResultClientV2({ sessionId }: { sessionId: number }) {
     return summary.twoPoint.makes * 2 + summary.threePoint.makes * 3
   }, [summary])
 
-    const areaLabel = selectedPosition
-    ? selectedPosition.type === 'fixed'
-      ? selectedPosition.label
-      : getAreaName(selectedPosition.x, selectedPosition.y)
-    : '-'
+    // const areaLabel = selectedPosition
+    // ? selectedPosition.type === 'fixed'
+    //   ? selectedPosition.label
+    //   : getAreaName(selectedPosition.x, selectedPosition.y)
+    // : '-'
   const att = selectedPosition?.attempts ?? 0
   const mk = selectedPosition?.makes ?? 0
   const fgp = att ? (mk / att) * 100 : 0

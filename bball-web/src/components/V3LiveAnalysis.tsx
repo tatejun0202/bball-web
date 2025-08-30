@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { ShotAnalyzer } from '@/ai/shot-analyzer'
-import type { AnalysisFrame, ShotEvent, BallPosition } from '@/ai/types'
+import type { AnalysisFrame, ShotEvent } from '@/ai/types'
 
 interface QualityMetrics {
   goalDetected: boolean
@@ -18,7 +18,7 @@ interface V3LiveAnalysisProps {
 
 export default function V3LiveAnalysis({ onRecordingComplete, onBack }: V3LiveAnalysisProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  // const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -38,7 +38,7 @@ export default function V3LiveAnalysis({ onRecordingComplete, onBack }: V3LiveAn
   const [error, setError] = useState<string | null>(null)
   const [isAnalyzerReady, setIsAnalyzerReady] = useState(false)
   const [currentShots, setCurrentShots] = useState<ShotEvent[]>([])
-  const [ballTrail, setBallTrail] = useState<BallPosition[]>([])
+  // const [ballTrail, setBallTrail] = useState<BallPosition[]>([])
 
   // TensorFlow.js解析エンジンの初期化
   const initializeAnalyzer = useCallback(async () => {
@@ -86,8 +86,8 @@ export default function V3LiveAnalysis({ onRecordingComplete, onBack }: V3LiveAn
       setCurrentShots(shots)
       
       // ボール軌跡更新
-      const trail = analyzerRef.current.getTrajectoryHistory()
-      setBallTrail(trail.slice(-20)) // 直近20ポイント
+      // const trail = analyzerRef.current.getTrajectoryHistory()
+      // setBallTrail(trail.slice(-20)) // 直近20ポイント
 
     } catch (error) {
       console.warn('リアルタイム解析エラー:', error)
@@ -176,7 +176,7 @@ export default function V3LiveAnalysis({ onRecordingComplete, onBack }: V3LiveAn
       videoRef.current.srcObject = null
     }
     setIsStreamActive(false)
-    setBallTrail([])
+    // setBallTrail([])
     setCurrentShots([])
   }, [])
 

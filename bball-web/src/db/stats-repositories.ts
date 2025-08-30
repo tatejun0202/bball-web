@@ -1,7 +1,7 @@
 // src/db/stats-repositories.ts
 import { db } from './dexie'
 import { SPOTS } from '@/constants/spots'
-import type { Session, DrillResult } from './dexie'
+// import type { Session, DrillResult } from './dexie'
 
 // 基本的な統計データ型
 export interface SessionStats {
