@@ -62,7 +62,7 @@ export function useHorizontalSwipe({
         tracking = true
         pulled = 0
         direction = null
-        phone.style.touchAction = 'none'
+        // touchActionは方向確定後に設定
       }
 
       const move = (x: number, y: number) => {
@@ -70,26 +70,37 @@ export function useHorizontalSwipe({
         
         const dx = x - startX
         const dy = Math.abs(y - startY)
+        const adx = Math.abs(dx)
         
-        // 縦方向のスワイプが大きい場合はキャンセル
-        if (dy > 80) {
+        // 早期に縦スクロール意図を検知
+        if (dy > 30 && adx < 20) {
+          // 明らかに縦方向の動きの場合は即座にキャンセル
+          cancel()
+          return
+        }
+        
+        // 縦方向の動きが横方向より大きい場合もキャンセル
+        if (dy > adx && dy > 20) {
           cancel()
           return
         }
 
-        // 方向を決定（逆転）
-        if (!direction && Math.abs(dx) > 10) {
-          direction = dx > 0 ? 'left' : 'right' // ← 逆転
+        // 方向を決定（横方向の閾値を上げる）
+        if (!direction && adx > 25) {
+          direction = dx > 0 ? 'left' : 'right'
           
           // 隣接画面がない場合はキャンセル
           if (!getAdjacentPath(direction)) {
             cancel()
             return
           }
+          
+          // 方向が確定してからtouchActionを設定
+          phone.style.touchAction = 'none'
         }
 
         if (direction) {
-          pulled = Math.min(Math.abs(dx), maxPull)
+          pulled = Math.min(adx, maxPull)
           
           // 視覚的フィードバック（スワイプ方向に応じて）
           phone.style.transform = `translateX(${direction === 'left' ? pulled : -pulled}px)`
@@ -157,10 +168,11 @@ export function useHorizontalSwipe({
       }
       const onTouchMove = (e: TouchEvent) => {
         const t = e.touches[0]
+        move(t.clientX, t.clientY)
+        // 横方向のスワイプが確定した時のみpreventDefault
         if (tracking && direction) {
           e.preventDefault() // スクロールを防止
         }
-        move(t.clientX, t.clientY)
       }
       const onTouchEnd = () => end()
       const onTouchCancel = () => cancel()
