@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { ShotAnalyzer } from '@/ai/shot-analyzer'
 import type { ShotEvent } from '@/ai/types'
 
@@ -51,7 +51,7 @@ export default function V3VideoUpload({ onVideoSelected, onBack }: V3VideoUpload
     }
   }, [])
 
-  // ファイル選択処理
+  // ファイル選択処理（非同期で品質チェック）
   const handleFileSelect = useCallback(async (file: File) => {
     setError(null)
     setSelectedFile(file)
@@ -63,14 +63,16 @@ export default function V3VideoUpload({ onVideoSelected, onBack }: V3VideoUpload
     const url = URL.createObjectURL(file)
     setPreviewUrl(url)
 
-    // 品質チェック実行
-    try {
-      const quality = await performQualityCheck(file, url)
-      setQualityCheck(quality)
-    } catch (err) {
-      setError('動画の品質チェックに失敗しました')
-      console.error('Quality check error:', err)
-    }
+    // 品質チェックを非同期で実行（UIをブロックしない）
+    setTimeout(async () => {
+      try {
+        const quality = await performQualityCheck(file, url)
+        setQualityCheck(quality)
+      } catch (err) {
+        setError('動画の品質チェックに失敗しました')
+        console.error('Quality check error:', err)
+      }
+    }, 100) // 100ms後に実行してUIの応答性を保つ
   }, [previewUrl])
 
   // 品質チェック実行
@@ -156,7 +158,7 @@ export default function V3VideoUpload({ onVideoSelected, onBack }: V3VideoUpload
   }
 
   // コンポーネント初期化時にAI解析エンジンを読み込み
-  useState(() => {
+  useEffect(() => {
     initializeAnalyzer()
     return () => {
       if (analyzerRef.current) {
@@ -166,7 +168,7 @@ export default function V3VideoUpload({ onVideoSelected, onBack }: V3VideoUpload
         URL.revokeObjectURL(previewUrl)
       }
     }
-  })
+  }, [])
 
   return (
     <div style={{ 
@@ -242,16 +244,29 @@ export default function V3VideoUpload({ onVideoSelected, onBack }: V3VideoUpload
             <input
               ref={fileInputRef}
               type="file"
-              accept="video/*"
+              accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
               onChange={(e) => {
                 const file = e.target.files?.[0]
-                if (file) handleFileSelect(file)
+                if (file) {
+                  console.log('ファイル選択:', file.name, file.size, file.type)
+                  // 非同期でファイル処理を実行
+                  setTimeout(() => {
+                    handleFileSelect(file)
+                  }, 0)
+                }
+                // ファイル選択後はinputをリセット（同じファイルでも再選択可能に）
+                e.target.value = ''
               }}
               style={{ display: 'none' }}
             />
             
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                // スマホでのタップ遅延を防ぐ
+                setTimeout(() => {
+                  fileInputRef.current?.click()
+                }, 50)
+              }}
               disabled={!isAnalyzerReady}
               style={{
                 padding: '16px 32px',
@@ -262,7 +277,9 @@ export default function V3VideoUpload({ onVideoSelected, onBack }: V3VideoUpload
                 fontSize: 16,
                 fontWeight: 700,
                 cursor: isAnalyzerReady ? 'pointer' : 'not-allowed',
-                marginBottom: 16
+                marginBottom: 16,
+                touchAction: 'manipulation', // iOS Safariでのタップ遅延を削除
+                WebkitTapHighlightColor: 'transparent'
               }}
             >
               {isAnalyzerReady ? '動画を選択' : 'AI読み込み中...'}
