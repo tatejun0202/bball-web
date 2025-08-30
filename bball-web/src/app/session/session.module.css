@@ -3,9 +3,10 @@
 .pageContainer {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 60px);
+  min-height: calc(100vh - 60px);
   padding: 8px 12px 12px 12px;
-  overflow: hidden;
+  overflow-y: auto;  /* 縦スクロール可能 */
+  overflow-x: hidden; /* 横スクロール無効 */
 }
 
 .fullScreenMode {
@@ -109,6 +110,8 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow-y: auto;  /* 縦スクロール可能 */
+  overflow-x: hidden; /* 横スクロール無効 */
 }
 
 .courtContainer {
@@ -349,13 +352,14 @@
 
 /* Results Screen */
 .resultsContainer {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   padding: 16px 12px;
   background: #1a1a1a;
   color: #fff;
-  overflow: auto;
+  overflow-y: auto;  /* 縦スクロール可能 */
+  overflow-x: hidden; /* 横スクロール無効 */
 }
 
 .resultsContent {

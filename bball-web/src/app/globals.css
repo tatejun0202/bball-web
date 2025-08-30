@@ -39,18 +39,20 @@ body {
   display: grid;
   place-items: center;
 }
-/* アプリ自体は画面にピッタリ＆スクロール無し */
+/* アプリ自体は画面にピッタリ＆スクロール可能 */
 #app-phone{
   width: 430px;
   max-width: 100vw;
   height: 100dvh;           /* ← 固定高 */
-  overflow: hidden;         /* ← 本体はスクロールしない */
+  overflow-y: auto;         /* ← 縦スクロールを許可 */
+  overflow-x: hidden;       /* ← 横スクロールは無効 */
   background: #1c1c1c;
 }
 
 main.page-fit {
-  height: calc(100dvh - 60px); /* 60px ≒ フッター高のみ */
-  overflow: hidden;
+  min-height: calc(100dvh - 60px); /* 60px ≒ フッター高のみ */
+  overflow-y: auto;  /* 縦スクロール可能 */
+  overflow-x: hidden; /* 横スクロール無効 */
   display: flex;
   flex-direction: column;
 }
