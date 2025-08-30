@@ -72,33 +72,30 @@ export function useHorizontalSwipe({
         const dy = Math.abs(y - startY)
         const adx = Math.abs(dx)
         
-        // 早期に縦スクロール意図を検知
-        if (dy > 30 && adx < 20) {
-          // 明らかに縦方向の動きの場合は即座にキャンセル
-          cancel()
-          return
-        }
-        
-        // 縦方向の動きが横方向より大きい場合もキャンセル
-        if (dy > adx && dy > 20) {
-          cancel()
-          return
-        }
-
-        // 方向を決定（横方向の閾値を上げる）
-        if (!direction && adx > 25) {
-          direction = dx > 0 ? 'left' : 'right'
-          
-          // 隣接画面がない場合はキャンセル
-          if (!getAdjacentPath(direction)) {
+        // 方向未確定の場合のみ判定を行う
+        if (!direction) {
+          // 明確な横スワイプ意図がある場合（横方向が大きく、縦方向が小さい）
+          if (adx > 40 && adx > dy * 2) {
+            direction = dx > 0 ? 'left' : 'right'
+            
+            // 隣接画面がない場合はキャンセル
+            if (!getAdjacentPath(direction)) {
+              cancel()
+              return
+            }
+            
+            // 横スワイプ確定後にtouchActionを設定
+            phone.style.touchAction = 'none'
+          }
+          // 縦方向の動きが大きく、明らかに縦スクロール意図の場合はキャンセル
+          else if (dy > 50 && dy > adx * 3) {
             cancel()
             return
           }
-          
-          // 方向が確定してからtouchActionを設定
-          phone.style.touchAction = 'none'
+          // それ以外の場合はまだ判定しない（縦スクロールを許可）
         }
 
+        // 横スワイプ確定後の処理
         if (direction) {
           pulled = Math.min(adx, maxPull)
           
