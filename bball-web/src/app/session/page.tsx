@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import FreePositionCourt from '@/components/FreePositionCourt'
 // import LiveCameraAnalysis from '@/components/LiveCameraAnalysis'
-import V3LiveAnalysis from '@/components/V3LiveAnalysis'
 import V3VideoUpload from '@/components/V3VideoUpload'
 // import VideoUploadAnalysis from '@/components/VideoUploadAnalysis'
 import VideoAnalysisProgress from '@/components/VideoAnalysisProgress'
@@ -17,7 +16,8 @@ import {
   ensureSeedZones,
   listZones,
   listSessions,
-  endSession
+  endSession,
+  updateSessionMins
 } from '@/db/repositories'
 import { addDrillResultV2 } from '@/db/repositories-v2'
 import { detectArea } from '@/constants/court-areas'
@@ -33,7 +33,7 @@ const toInt = (s: string) => (s === '' ? 0 : parseInt(s, 10))
 const normalizeNumString = (s: string) => s.replace(/[^\d]/g, '')
 
 // モードの型定義
-type RecordingMode = 'manual' | 'live' | 'upload'
+type RecordingMode = 'manual' | 'upload'
 type AnalysisStep = 'mode-selection' | 'camera-recording' | 'video-upload' | 'analysis-progress' | 'results-review'
 
 // シュート検出結果の型定義
@@ -181,7 +181,7 @@ export default function SessionPageV3() {
   // V3: ライブカメラ録画完了の処理（AI解析版）
   const handleV3LiveComplete = async (videoBlob: Blob, shots: ShotEvent[]) => {
     // 新しいセッションを作成
-    await createNewSessionForRecording('AI ライブ録画')
+    const newSessionId = await createNewSessionForRecording('AI ライブ録画')
     setCurrentVideoBlob(videoBlob)
     // AI解析結果を直接処理
     await handleAnalysisComplete(shots)
@@ -190,11 +190,24 @@ export default function SessionPageV3() {
   // V3: 動画アップロード解析完了の処理（AI解析版）
   const handleV3UploadComplete = async (file: File, qualityCheck: VideoQualityCheck, shots: ShotEvent[]) => {
     // 新しいセッションを作成
-    await createNewSessionForRecording(`AI 動画解析: ${file.name}`)
+    const newSessionId = await createNewSessionForRecording(`AI 動画解析: ${file.name}`)
     setCurrentVideoFile(file)
     // setVideoQualityCheck(qualityCheck)
+    
+    // 動画時間（分）を計算して設定
+    const durationInMinutes = Math.ceil(qualityCheck.duration / 60)
+    if (newSessionId) {
+      await updateSessionMins(newSessionId, durationInMinutes)
+    }
+    
     // AI解析結果を直接処理
     await handleAnalysisComplete(shots)
+    
+    // セッション自動終了と履歴画面遷移
+    if (newSessionId) {
+      await endSession(newSessionId)
+      router.replace('/history')
+    }
   }
 
   // V3: ライブカメラ録画完了の処理（従来版）
@@ -215,7 +228,7 @@ export default function SessionPageV3() {
   // }
 
   // V3: 録画・動画用の新セッション作成
-  const createNewSessionForRecording = async (sessionName: string) => {
+  const createNewSessionForRecording = async (sessionName: string): Promise<number | null> => {
     try {
       // 現在のセッションを終了
       if (sessionId) {
@@ -236,8 +249,10 @@ export default function SessionPageV3() {
       await updateSessionTitle(newSessionId, newTitle)
       
       console.log(`新しいセッションを作成しました: ${newTitle} (ID: ${newSessionId})`)
+      return newSessionId
     } catch (error) {
       console.error('セッション作成エラー:', error)
+      return null
     }
   }
 
@@ -358,13 +373,6 @@ export default function SessionPageV3() {
     // フルスクリーンモード（カメラ、アップロード、解析画面）
     return (
       <div className={styles.fullScreenMode}>
-        {/* V3: ライブカメラ解析画面 */}
-        {analysisStep === 'camera-recording' && (
-          <V3LiveAnalysis
-            onRecordingComplete={handleV3LiveComplete}
-            onBack={resetAnalysisFlow}
-          />
-        )}
 
         {/* V3: 動画アップロード画面 */}
         {analysisStep === 'video-upload' && (
@@ -485,7 +493,6 @@ export default function SessionPageV3() {
           className={styles.modeSelect}
         >
           <option value="manual">手動記録</option>
-          <option value="live">ライブ解析</option>
           <option value="upload">動画アップロード</option>
         </select>
       </div>
@@ -502,6 +509,8 @@ export default function SessionPageV3() {
                   Spot Mode
                 </span>
                 <button
+                  type="button"
+                  aria-label="スポットモード切り替え"
                   onClick={handleSpotModeToggle}
                   className={`${styles.toggleButton} ${showFixedSpots ? styles.toggleButtonActive : ''}`}
                 >
@@ -566,25 +575,6 @@ export default function SessionPageV3() {
         </div>
       )}
 
-      {/* ライブ解析モード */}
-      {recordingMode === 'live' && analysisStep === 'mode-selection' && (
-        <div className={styles.modeCard}>
-          <div className={`${styles.modeCardTitle} ${styles.modeCardTitleLive}`}>
-            📹 ライブ解析モード
-          </div>
-          <div className={styles.modeCardDescription}>
-            カメラを起動してリアルタイムで<br />
-            シュートを自動解析・記録します
-          </div>
-          <button
-            type="button"
-            className={`${styles.modeCardButton} ${styles.modeCardButtonLive}`}
-            onClick={() => setAnalysisStep('camera-recording')}
-          >
-            カメラを起動
-          </button>
-        </div>
-      )}
 
       {/* 動画アップロードモード */}
       {recordingMode === 'upload' && analysisStep === 'mode-selection' && (

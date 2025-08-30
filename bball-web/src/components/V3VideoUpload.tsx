@@ -245,27 +245,28 @@ export default function V3VideoUpload({ onVideoSelected, onBack }: V3VideoUpload
               ref={fileInputRef}
               type="file"
               accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) {
-                  console.log('ファイル選択:', file.name, file.size, file.type)
-                  // 非同期でファイル処理を実行
-                  setTimeout(() => {
-                    handleFileSelect(file)
-                  }, 0)
+              onChange={async (e) => {
+                try {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    console.log('ファイル選択:', file.name, file.size, file.type)
+                    await handleFileSelect(file)
+                  }
+                  // ファイル選択後はinputをリセット（同じファイルでも再選択可能に）
+                  e.target.value = ''
+                } catch (error) {
+                  console.error('ファイル選択エラー:', error)
+                  setError('ファイルの読み込みに失敗しました')
                 }
-                // ファイル選択後はinputをリセット（同じファイルでも再選択可能に）
-                e.target.value = ''
               }}
               style={{ display: 'none' }}
             />
             
             <button
-              onClick={() => {
-                // スマホでのタップ遅延を防ぐ
-                setTimeout(() => {
-                  fileInputRef.current?.click()
-                }, 50)
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                fileInputRef.current?.click()
               }}
               disabled={!isAnalyzerReady}
               style={{
@@ -279,7 +280,8 @@ export default function V3VideoUpload({ onVideoSelected, onBack }: V3VideoUpload
                 cursor: isAnalyzerReady ? 'pointer' : 'not-allowed',
                 marginBottom: 16,
                 touchAction: 'manipulation', // iOS Safariでのタップ遅延を削除
-                WebkitTapHighlightColor: 'transparent'
+                WebkitTapHighlightColor: 'transparent',
+                WebkitAppearance: 'none'
               }}
             >
               {isAnalyzerReady ? '動画を選択' : 'AI読み込み中...'}

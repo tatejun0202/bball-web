@@ -8,6 +8,9 @@ export interface Session {
   note?: string
   // ★ V2追加: セッションのモード識別
   mode?: 'spot' | 'free'  // spot=固定スポット, free=自由配置
+  // ★ V3追加: セッション時間（分）
+  mins?: number
+  updatedAt?: number
 }
 
 export interface Zone { 
@@ -67,6 +70,13 @@ class AppDB extends Dexie {
     // ★ v5: セッションモード対応
     this.version(5).stores({
       sessions: '++id, startedAt, endedAt, mode',
+      zones: '++id, orderIndex, is3pt',
+      drillResults: '++id, sessionId, zoneId, spotId, freeX, freeY, positionType, createdAt, [sessionId+createdAt]',
+    })
+    
+    // ★ v6: セッション時間（mins）とupdatedAt対応
+    this.version(6).stores({
+      sessions: '++id, startedAt, endedAt, mode, mins, updatedAt',
       zones: '++id, orderIndex, is3pt',
       drillResults: '++id, sessionId, zoneId, spotId, freeX, freeY, positionType, createdAt, [sessionId+createdAt]',
     })

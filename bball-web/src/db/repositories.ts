@@ -148,4 +148,11 @@ export async function clearAllHistory() {
   })
 }
 
+export async function updateSessionMins(sessionId: number, mins: number) {
+  await db.sessions.update(sessionId, { 
+    mins,
+    updatedAt: Date.now()
+  })
+}
+
 
