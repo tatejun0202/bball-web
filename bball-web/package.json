@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.14.0",
-  "engines": { "node": ">=20 <23" },
-
+  "engines": {
+    "node": ">=20 <23"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,6 +13,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs": "^4.22.0",
     "dexie": "^4.0.11",
     "next": "15.4.6",
     "next-pwa": "^5.6.0",

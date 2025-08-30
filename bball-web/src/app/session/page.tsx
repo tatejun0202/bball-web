@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import FreePositionCourt from '@/components/FreePositionCourt'
 import LiveCameraAnalysis from '@/components/LiveCameraAnalysis'
+import V3LiveAnalysis from '@/components/V3LiveAnalysis'
+import V3VideoUpload from '@/components/V3VideoUpload'
 import VideoUploadAnalysis from '@/components/VideoUploadAnalysis'
 import VideoAnalysisProgress from '@/components/VideoAnalysisProgress'
 import styles from './session.module.css'
@@ -22,6 +24,7 @@ import { detectArea } from '@/constants/court-areas'
 import { SPOTS } from '@/constants/spots'
 import type { Zone } from '@/db/dexie'
 import type { NewDrillResult, PositionInfo } from '@/db/types'
+import type { ShotEvent } from '@/ai/types'
 
 // 文字列から数値への変換（空文字は0）
 const toInt = (s: string) => (s === '' ? 0 : parseInt(s, 10))
@@ -175,7 +178,26 @@ export default function SessionPageV3() {
     )
   }, [sessionId, selectedPosition, attempts, makes])
 
-  // V3: ライブカメラ録画完了の処理
+  // V3: ライブカメラ録画完了の処理（AI解析版）
+  const handleV3LiveComplete = async (videoBlob: Blob, shots: ShotEvent[]) => {
+    // 新しいセッションを作成
+    await createNewSessionForRecording('AI ライブ録画')
+    setCurrentVideoBlob(videoBlob)
+    // AI解析結果を直接処理
+    await handleAnalysisComplete(shots)
+  }
+
+  // V3: 動画アップロード解析完了の処理（AI解析版）
+  const handleV3UploadComplete = async (file: File, qualityCheck: VideoQualityCheck, shots: ShotEvent[]) => {
+    // 新しいセッションを作成
+    await createNewSessionForRecording(`AI 動画解析: ${file.name}`)
+    setCurrentVideoFile(file)
+    setVideoQualityCheck(qualityCheck)
+    // AI解析結果を直接処理
+    await handleAnalysisComplete(shots)
+  }
+
+  // V3: ライブカメラ録画完了の処理（従来版）
   const handleLiveCameraComplete = async (videoBlob: Blob) => {
     // 新しいセッションを作成
     await createNewSessionForRecording('ライブ録画')
@@ -183,7 +205,7 @@ export default function SessionPageV3() {
     setAnalysisStep('analysis-progress')
   }
 
-  // V3: 動画アップロード選択の処理
+  // V3: 動画アップロード選択の処理（従来版）
   const handleVideoUploadSelected = async (file: File, qualityCheck: VideoQualityCheck) => {
     // 新しいセッションを作成
     await createNewSessionForRecording(`動画アップロード: ${file.name}`)
@@ -220,13 +242,33 @@ export default function SessionPageV3() {
   }
 
   // V3: 解析完了時の処理
-  const handleAnalysisComplete = async (shots: ShotDetection[]) => {
-    setDetectedShots(shots)
+  const handleAnalysisComplete = async (shots: ShotEvent[] | ShotDetection[]) => {
+    // ShotEventをShotDetectionに変換
+    const convertedShots: ShotDetection[] = shots.map(shot => {
+      if ('outcome' in shot) {
+        // ShotEvent型の場合
+        const shotEvent = shot as ShotEvent
+        return {
+          timestamp: shotEvent.startTime,
+          position: {
+            x: shotEvent.peak?.x || shotEvent.trajectory[0]?.position.x || 0,
+            y: shotEvent.peak?.y || shotEvent.trajectory[0]?.position.y || 0
+          },
+          result: shotEvent.outcome === 'made' ? 'make' as const : 'miss' as const,
+          confidence: shotEvent.confidence
+        }
+      } else {
+        // 既にShotDetection型の場合
+        return shot as ShotDetection
+      }
+    }).filter(shot => shot.result !== ('unknown' as 'make' | 'miss')) // unknown結果を除外
+
+    setDetectedShots(convertedShots)
     setIsAnalysisComplete(true)
     
     // 検出されたシュートをV2システムに保存
-    if (sessionId && shots.length > 0) {
-      for (const shot of shots) {
+    if (sessionId && convertedShots.length > 0) {
+      for (const shot of convertedShots) {
         // 座標からエリア判定
         const area = detectArea(shot.position.x, shot.position.y)
         const is3P = area?.is3pt ?? false
@@ -318,16 +360,16 @@ export default function SessionPageV3() {
       <div className={styles.fullScreenMode}>
         {/* V3: ライブカメラ解析画面 */}
         {analysisStep === 'camera-recording' && (
-          <LiveCameraAnalysis
-            onRecordingComplete={handleLiveCameraComplete}
+          <V3LiveAnalysis
+            onRecordingComplete={handleV3LiveComplete}
             onBack={resetAnalysisFlow}
           />
         )}
 
         {/* V3: 動画アップロード画面 */}
         {analysisStep === 'video-upload' && (
-          <VideoUploadAnalysis
-            onVideoSelected={handleVideoUploadSelected}
+          <V3VideoUpload
+            onVideoSelected={handleV3UploadComplete}
             onBack={resetAnalysisFlow}
           />
         )}
