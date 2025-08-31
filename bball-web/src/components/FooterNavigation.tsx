@@ -1,6 +1,7 @@
 // src/components/FooterNavigation.tsx
 'use client'
 import { useRouter, usePathname } from 'next/navigation'
+import Image from 'next/image'
 
 export default function FooterNavigation() {
   const router = useRouter()
@@ -21,25 +22,25 @@ export default function FooterNavigation() {
   const navItems = [
     {
       key: 'session',
-      icon: '🏀',
+      iconPath: '/icons/footer/session.png',
       label: 'Session',
       path: '/session'
     },
     {
       key: 'history',
-      icon: '📋',
+      iconPath: '/icons/footer/result.png',
       label: 'History',
       path: '/history'
     },
     {
       key: 'stats',
-      icon: '📊',
+      iconPath: '/icons/footer/stats.png',
       label: 'Stats',
       path: '/stats'
     },
     {
       key: 'settings',
-      icon: '⚙️',
+      iconPath: '/icons/footer/setting.png',
       label: 'Settings',
       path: '/settings'
     }
@@ -89,13 +90,22 @@ export default function FooterNavigation() {
               touchAction: 'manipulation'
             }}
           >
-            <span style={{ 
-              fontSize: 20,
-              filter: isActive ? 'none' : 'grayscale(0.5)',
+            <div style={{ 
+              width: 24,
+              height: 24,
+              position: 'relative',
+              filter: isActive ? 'none' : 'grayscale(0.5) opacity(0.7)',
               transition: 'filter 0.2s ease'
             }}>
-              {item.icon}
-            </span>
+              <Image
+                src={item.iconPath}
+                alt={item.label}
+                fill
+                style={{
+                  objectFit: 'contain'
+                }}
+              />
+            </div>
             <span style={{ 
               fontSize: 10, 
               fontWeight: isActive ? 600 : 400,
