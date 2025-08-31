@@ -1,6 +1,6 @@
 // src/app/settings/page.tsx (スクロール修正版)
 'use client'
-import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
+// import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { db } from '@/db/dexie'
 
 export default function SettingsPage() {

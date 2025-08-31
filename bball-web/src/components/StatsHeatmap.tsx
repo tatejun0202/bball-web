@@ -30,7 +30,7 @@ export default function StatsHeatmap({ spotStats, overallStats }: Props) {
   const getHeatColor = (fgPercentage: number, attempts: number) => {
     if (attempts < 5) return 'rgba(156, 163, 175, 0.6)' // グレー（データ不足）
     
-    const intensity = Math.min(fgPercentage / 100, 1)
+    // const intensity = Math.min(fgPercentage / 100, 1)
     const alpha = Math.min(attempts / 50, 1) * 0.8 + 0.2 // 試投数に応じた透明度
     
     if (fgPercentage >= 70) {
@@ -51,7 +51,7 @@ export default function StatsHeatmap({ spotStats, overallStats }: Props) {
   // サイズを計算（試投数に基づく）
   const getSpotSize = (attempts: number) => {
     const baseSize = 20
-    const maxSize = 40
+    // const maxSize = 40
     const sizeMultiplier = Math.min(attempts / 30, 2)
     return Math.max(baseSize, baseSize * sizeMultiplier)
   }

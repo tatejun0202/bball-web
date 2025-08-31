@@ -15,7 +15,13 @@ export default function VideoUploadScreen({ onUploadComplete, onBack }: VideoUpl
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [progress, setProgress] = useState<PreprocessingProgress>({ stage: 'initializing', progress: 0 })
   const [error, setError] = useState<string | null>(null)
-  const [videoMetadata, setVideoMetadata] = useState<any>(null)
+  const [videoMetadata, setVideoMetadata] = useState<{
+    duration: number
+    width: number
+    height: number
+    size: number
+    type: string
+  } | null>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const preprocessor = useRef(new VideoPreprocessor())
@@ -41,7 +47,7 @@ export default function VideoUploadScreen({ onUploadComplete, onBack }: VideoUpl
       setSelectedFile(file)
       setVideoMetadata(metadata)
       setError(null)
-    } catch (error) {
+    } catch {
       setError('動画ファイルの読み込みに失敗しました')
     }
   }
@@ -76,8 +82,8 @@ export default function VideoUploadScreen({ onUploadComplete, onBack }: VideoUpl
       setStage('complete')
       onUploadComplete(result)
 
-    } catch (error) {
-      setError(error instanceof Error ? error.message : '動画の処理に失敗しました')
+    } catch (processingError) {
+      setError(processingError instanceof Error ? processingError.message : '動画の処理に失敗しました')
       setStage('select')
     }
   }

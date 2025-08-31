@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useState, useRef } from 'react'
 import { SPOTS } from '@/constants/spots'
-import { detectArea, getAreaName } from '@/constants/court-areas'
+import { getAreaName } from '@/constants/court-areas'
 import type { PositionInfo } from '@/db/types'
 
 type Props = {

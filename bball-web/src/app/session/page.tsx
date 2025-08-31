@@ -2,7 +2,7 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
+// import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import FreePositionCourt from '@/components/FreePositionCourt'
 import VideoUploadScreen from '@/components/VideoUploadScreen'
 import { 
@@ -15,7 +15,7 @@ import {
   endSession
 } from '@/db/repositories'
 import { addDrillResultV2 } from '@/db/repositories-v2'
-import { detectArea, getAreaName } from '@/constants/court-areas'
+import { detectArea } from '@/constants/court-areas'
 import { SPOTS } from '@/constants/spots'
 import type { Zone } from '@/db/dexie'
 import type { NewDrillResult, PositionInfo } from '@/db/types'
@@ -120,8 +120,8 @@ export default function SessionPageV2() {
 
   // 自由配置時の処理
   const handleFreePosition = (x: number, y: number) => {
-    // エリアを自動判定
-    const area = detectArea(x, y)
+    // エリアを自動判定（現在は使用しないがdetectArea関数を保持）
+    // const area = detectArea(x, y)
     
     const newPosition: PositionInfo = {
       type: 'free',
