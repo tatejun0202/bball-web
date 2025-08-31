@@ -20,6 +20,7 @@ import { SPOTS } from '@/constants/spots'
 import type { Zone } from '@/db/dexie'
 import type { NewDrillResult, PositionInfo } from '@/db/types'
 import type { PreprocessingResult } from '@/utils/videoPreprocessor'
+import { videoAnalysisApi, type AnalysisProgress, type ShotDetection } from '@/services/videoAnalysisApi'
 
 // 文字列から数値への変換（空文字は0）
 const toInt = (s: string) => (s === '' ? 0 : parseInt(s, 10))
@@ -37,6 +38,10 @@ export default function SessionPageV2() {
   // 記録モードの状態
   const [recordingMode, setRecordingMode] = useState<'manual' | 'video'>('manual')
   const [showVideoUpload, setShowVideoUpload] = useState(false)
+  
+  // 動画解析の状態
+  const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress | null>(null)
+  const [analysisResults, setAnalysisResults] = useState<ShotDetection[] | null>(null)
   
   // 選択中の位置情報
   const [selectedPosition, setSelectedPosition] = useState<PositionInfo | null>(null)
@@ -189,17 +194,108 @@ export default function SessionPageV2() {
   // 動画アップロード完了の処理
   const handleVideoUploadComplete = async (result: PreprocessingResult) => {
     try {
-      // TODO: サーバーに解析リクエストを送信する処理を実装
       console.log('Video preprocessing completed:', result)
       
-      // 現在は処理済みデータを表示するだけ
-      alert(`動画処理完了！\nフレーム数: ${result.frameCount}\n圧縮率: ${(result.metadata.compressionRatio * 100).toFixed(1)}%`)
+      // サーバー解析リクエストの準備
+      const analysisRequest = {
+        frames: result.frames,
+        metadata: {
+          targetFps: result.metadata.targetFps || 2,
+          originalDuration: result.duration,
+          targetWidth: result.metadata.targetWidth || 480,
+          targetHeight: result.metadata.targetHeight || 270,
+          compressionRatio: result.metadata.compressionRatio
+        }
+      }
+
+      // 解析進捗のリセット
+      setAnalysisProgress({
+        stage: 'uploading',
+        progress: 0,
+        message: 'サーバーに送信中...'
+      })
+
+      // Railway サーバーで解析実行
+      const analysisResult = await videoAnalysisApi.analyzeFrames(
+        analysisRequest,
+        (progress) => setAnalysisProgress(progress)
+      )
+
+      console.log('Analysis completed:', analysisResult)
+      
+      // 解析結果を保存
+      setAnalysisResults(analysisResult.shots)
+      
+      // 新しいセッションを作成して結果を保存
+      await saveAnalysisResults(analysisResult.shots, result.duration)
       
       setShowVideoUpload(false)
+      setAnalysisProgress(null)
+      
+      // 成功メッセージ
+      alert(`解析完了！\nシュート検出数: ${analysisResult.summary.total_attempts}\n成功率: ${analysisResult.summary.fg_percentage.toFixed(1)}%`)
       
     } catch (error) {
-      console.error('Video upload processing error:', error)
-      alert('動画の処理中にエラーが発生しました')
+      console.error('Video analysis error:', error)
+      setAnalysisProgress({
+        stage: 'error',
+        progress: 0,
+        message: error instanceof Error ? error.message : '解析に失敗しました'
+      })
+      
+      // 3秒後にエラー状態をクリア
+      setTimeout(() => {
+        setAnalysisProgress(null)
+        setShowVideoUpload(false)
+      }, 3000)
+    }
+  }
+
+  // 解析結果をデータベースに保存
+  const saveAnalysisResults = async (shots: ShotDetection[], durationMinutes: number) => {
+    if (!sessionId || shots.length === 0) return
+
+    try {
+      // 新しいセッション作成（動画解析用）
+      const sessions = await listSessions()
+      const sessionCount = sessions.length
+      const videoSessionTitle = `AI解析 - Session${sessionCount + 1}`
+      
+      // セッションタイトル更新
+      await updateSessionTitle(sessionId, videoSessionTitle)
+
+      // 各ショットをdrillResultとして保存
+      for (const shot of shots) {
+        // 正規化座標を実際のコート座標に変換
+        const courtX = shot.position.x * 340 // コート幅
+        const courtY = shot.position.y * 238 // コート高（アスペクト比調整済み）
+        
+        // エリア判定
+        const area = detectArea(courtX, courtY)
+        const is3P = area?.is3pt ?? false
+        const zone = zones.find(z => Boolean(z.is3pt) === Boolean(is3P))
+        const zoneId = zone?.id ?? zones[0]?.id ?? 1
+
+        const payload: NewDrillResult = {
+          sessionId,
+          zoneId,
+          attempts: 1,
+          makes: shot.result === 'make' ? 1 : 0,
+          position: { type: 'free', x: courtX, y: courtY }
+        }
+
+        await addDrillResultV2(payload, 'free')
+      }
+
+      // セッション終了
+      await endSession(sessionId)
+      
+      // 履歴画面に遷移
+      router.replace('/history')
+      
+    } catch (error) {
+      console.error('Failed to save analysis results:', error)
+      throw error
     }
   }
 
@@ -215,7 +311,104 @@ export default function SessionPageV2() {
   }
 
   // 動画アップロード画面の表示制御
-  if (showVideoUpload) {
+  if (showVideoUpload || analysisProgress) {
+    // 解析進捗画面
+    if (analysisProgress) {
+      return (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: '#1a1a1a',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 20
+        }}>
+          <div style={{
+            textAlign: 'center',
+            maxWidth: 400,
+            width: '100%'
+          }}>
+            {analysisProgress.stage === 'error' ? (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 24 }}>❌</div>
+                <div style={{ fontSize: 24, fontWeight: 600, marginBottom: 8, color: '#ef4444' }}>
+                  解析エラー
+                </div>
+                <div style={{ color: '#9aa', marginBottom: 32 }}>
+                  {analysisProgress.message}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 24 }}>
+                  {analysisProgress.stage === 'uploading' && '📤'}
+                  {analysisProgress.stage === 'processing' && '🧠'}
+                  {analysisProgress.stage === 'complete' && '✅'}
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 600, marginBottom: 8 }}>
+                  {analysisProgress.stage === 'uploading' && 'データ送信中...'}
+                  {analysisProgress.stage === 'processing' && 'AI解析中...'}
+                  {analysisProgress.stage === 'complete' && '解析完了！'}
+                </div>
+                <div style={{ color: '#9aa', marginBottom: 32 }}>
+                  {analysisProgress.message}
+                </div>
+
+                {/* プログレスバー */}
+                {analysisProgress.stage !== 'complete' && (
+                  <>
+                    <div style={{
+                      width: '100%',
+                      height: 8,
+                      background: '#333',
+                      borderRadius: 4,
+                      marginBottom: 16,
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${analysisProgress.progress}%`,
+                        height: '100%',
+                        background: analysisProgress.stage === 'error' 
+                          ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+                          : 'linear-gradient(90deg, #0ea5e9, #06b6d4)',
+                        borderRadius: 4,
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </div>
+
+                    <div style={{ color: '#9aa', fontSize: 14, marginBottom: 24 }}>
+                      {analysisProgress.progress.toFixed(1)}% 完了
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            <button
+              onClick={() => {
+                setAnalysisProgress(null)
+                setShowVideoUpload(false)
+              }}
+              style={{
+                padding: '8px 16px',
+                background: 'none',
+                border: '1px solid #555',
+                color: '#9aa',
+                borderRadius: 8,
+                cursor: 'pointer'
+              }}
+            >
+              {analysisProgress.stage === 'error' ? '閉じる' : 'キャンセル'}
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    // 動画アップロード画面
     return (
       <VideoUploadScreen
         onUploadComplete={handleVideoUploadComplete}
