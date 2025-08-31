@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import FreePositionCourt from '@/components/FreePositionCourt'
+import VideoUploadScreen from '@/components/VideoUploadScreen'
 import { 
   getOrCreateActiveSession, 
   getSession, 
@@ -18,6 +19,7 @@ import { detectArea, getAreaName } from '@/constants/court-areas'
 import { SPOTS } from '@/constants/spots'
 import type { Zone } from '@/db/dexie'
 import type { NewDrillResult, PositionInfo } from '@/db/types'
+import type { PreprocessingResult } from '@/utils/videoPreprocessor'
 
 // 文字列から数値への変換（空文字は0）
 const toInt = (s: string) => (s === '' ? 0 : parseInt(s, 10))
@@ -31,6 +33,10 @@ export default function SessionPageV2() {
 
   const [sessionId, setSessionId] = useState<number>()
   const [zones, setZones] = useState<Zone[]>([])
+  
+  // 記録モードの状態
+  const [recordingMode, setRecordingMode] = useState<'manual' | 'video'>('manual')
+  const [showVideoUpload, setShowVideoUpload] = useState(false)
   
   // 選択中の位置情報
   const [selectedPosition, setSelectedPosition] = useState<PositionInfo | null>(null)
@@ -180,6 +186,23 @@ export default function SessionPageV2() {
     setMakesStr('')
   }
 
+  // 動画アップロード完了の処理
+  const handleVideoUploadComplete = async (result: PreprocessingResult) => {
+    try {
+      // TODO: サーバーに解析リクエストを送信する処理を実装
+      console.log('Video preprocessing completed:', result)
+      
+      // 現在は処理済みデータを表示するだけ
+      alert(`動画処理完了！\nフレーム数: ${result.frameCount}\n圧縮率: ${(result.metadata.compressionRatio * 100).toFixed(1)}%`)
+      
+      setShowVideoUpload(false)
+      
+    } catch (error) {
+      console.error('Video upload processing error:', error)
+      alert('動画の処理中にエラーが発生しました')
+    }
+  }
+
   const dateLabel = (() => {
     const d = new Date()
     return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
@@ -191,178 +214,262 @@ export default function SessionPageV2() {
     return String(next)
   }
 
+  // 動画アップロード画面の表示制御
+  if (showVideoUpload) {
+    return (
+      <VideoUploadScreen
+        onUploadComplete={handleVideoUploadComplete}
+        onBack={() => setShowVideoUpload(false)}
+      />
+    )
+  }
+
   return (
     <main className="page-fit" style={{ padding: 16 }}>
-      {/* タイトル行（ペンで編集） */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div>
-          {editingTitle ? (
-            <input
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              onBlur={commitTitle}
-              onKeyDown={e => { if (e.key === 'Enter') commitTitle() }}
-              autoFocus
-              style={{
-                fontSize: 24, fontWeight: 800, padding: '2px 6px',
-                border: '1px solid #555', borderRadius: 4, background: '#222', color: '#fff'
-              }}
-            />
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ fontSize: 24, fontWeight: 800 }}>{title}</div>
-              <button
-                type="button"
-                onClick={() => setEditingTitle(true)}
-                aria-label="edit title"
-                style={{ 
-                  background: 'none', border: 'none', cursor: 'pointer', 
-                  color: '#9aa', fontSize: 18, WebkitTapHighlightColor: 'transparent' 
+      {/* タイトル行とモード選択 */}
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {editingTitle ? (
+              <input
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                onBlur={commitTitle}
+                onKeyDown={e => { if (e.key === 'Enter') commitTitle() }}
+                autoFocus
+                style={{
+                  fontSize: 24, fontWeight: 800, padding: '2px 6px',
+                  border: '1px solid #555', borderRadius: 4, background: '#222', color: '#fff'
                 }}
-              >✏️</button>
-            </div>
-          )}
-          <div style={{ color: '#9aa', marginTop: 4 }}>{dateLabel}</div>
-        </div>
-      </div>
-
-      {/* コート */}
-      <div style={{ marginTop: 12 }}>
-        <div style={{ position: 'relative' }}>
-          {/* トグルボタン（コート右上外側） */}
-          <div style={{
-            position: 'absolute',
-            top: -40,
-            right: 0,
-            zIndex: 10,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '4px 8px',
-            background: 'rgba(28, 28, 28, 0.9)',
-            borderRadius: 16,
-            fontSize: 12,
-            fontWeight: 600
-          }}>
-            <span style={{ color: showFixedSpots ? '#ddd' : '#9aa' }}>Spot Mode</span>
-            <button
-              onClick={handleSpotModeToggle}
+              />
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 24, fontWeight: 800 }}>{title}</div>
+                <button
+                  type="button"
+                  onClick={() => setEditingTitle(true)}
+                  aria-label="edit title"
+                  style={{ 
+                    background: 'none', border: 'none', cursor: 'pointer', 
+                    color: '#9aa', fontSize: 18, WebkitTapHighlightColor: 'transparent' 
+                  }}
+                >✏️</button>
+              </div>
+            )}
+            
+            {/* モード選択ドロップダウン */}
+            <select
+              value={recordingMode}
+              onChange={(e) => setRecordingMode(e.target.value as 'manual' | 'video')}
               style={{
-                width: 40,
-                height: 20,
-                borderRadius: 10,
-                border: 'none',
-                background: showFixedSpots ? '#0ea5e9' : '#555',
-                position: 'relative',
+                padding: '4px 8px',
+                borderRadius: 4,
+                border: '1px solid #555',
+                background: '#2a2a2a',
+                color: '#ddd',
+                fontSize: 14,
                 cursor: 'pointer',
-                transition: 'background 0.2s ease',
+                WebkitAppearance: 'none',
                 WebkitTapHighlightColor: 'transparent'
               }}
             >
+              <option value="manual">手動記録</option>
+              <option value="video">動画アップロード</option>
+            </select>
+          </div>
+        </div>
+        <div style={{ color: '#9aa', fontSize: 12 }}>{dateLabel}</div>
+      </div>
+
+      {/* 手動記録モード */}
+      {recordingMode === 'manual' && (
+        <>
+          {/* コート */}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ position: 'relative' }}>
+              {/* トグルボタン（コート右上外側） */}
               <div style={{
-                width: 16,
-                height: 16,
-                borderRadius: '50%',
-                background: '#fff',
                 position: 'absolute',
-                top: 2,
-                left: showFixedSpots ? 22 : 2,
-                transition: 'left 0.2s ease'
-              }} />
+                top: -40,
+                right: 0,
+                zIndex: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '4px 8px',
+                background: 'rgba(28, 28, 28, 0.9)',
+                borderRadius: 16,
+                fontSize: 12,
+                fontWeight: 600
+              }}>
+                <span style={{ color: showFixedSpots ? '#ddd' : '#9aa' }}>Spot Mode</span>
+                <button
+                  onClick={handleSpotModeToggle}
+                  style={{
+                    width: 40,
+                    height: 20,
+                    borderRadius: 10,
+                    border: 'none',
+                    background: showFixedSpots ? '#0ea5e9' : '#555',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s ease',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                >
+                  <div style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    background: '#fff',
+                    position: 'absolute',
+                    top: 2,
+                    left: showFixedSpots ? 22 : 2,
+                    transition: 'left 0.2s ease'
+                  }} />
+                </button>
+              </div>
+              
+              <FreePositionCourt
+                width={340}
+                mode="select"
+                selectedPosition={selectedPosition}
+                onPositionSelect={handlePositionSelect}
+                onFreePosition={handleFreePosition}
+                flipY={true}
+                showFixedSpots={showFixedSpots}
+              />
+            </div>
+          </div>
+
+          {/* Attempt / Make：直接入力（text+numeric）＋ ± */}
+          <div style={{ 
+            marginTop: 16, 
+            display: 'grid', 
+            gap: 12, 
+            width: '100%', 
+            maxWidth: 360, 
+            marginInline: 'auto' 
+          }}>
+            <Row
+              label="Attempt"
+              value={attemptsStr}
+              onChange={(raw) => setAttemptsStr(normalizeNumString(raw))}
+              onMinus={() => setAttemptsStr(v => incStr(v, -1))}
+              onPlus={() => setAttemptsStr(v => incStr(v, +1))}
+            />
+            <Row
+              label="Make"
+              value={makesStr}
+              onChange={(raw) => setMakesStr(normalizeNumString(raw))}
+              onMinus={() => setMakesStr(v => incStr(v, -1))}
+              onPlus={() => setMakesStr(v => incStr(v, +1))}
+            />
+          </div>
+
+          {/* Enter / End Session */}
+          <div style={{ 
+            marginTop: 16, 
+            textAlign: 'center', 
+            display: 'grid', 
+            gap: 10, 
+            width: 220, 
+            marginInline: 'auto' 
+          }}>
+            <button
+              type="button"
+              disabled={!canSave}
+              onClick={save}
+              style={{
+                padding: '12px 24px', 
+                borderRadius: 10,
+                background: canSave ? '#0ea5e9' : '#2b4a58',
+                color: '#dff3ff', 
+                border: '1px solid #2aa3e0',
+                fontWeight: 800, 
+                cursor: canSave ? 'pointer' : 'not-allowed',
+                WebkitTapHighlightColor: 'transparent', 
+                WebkitAppearance: 'none', 
+                touchAction: 'manipulation',
+                fontSize: 16
+              }}
+            >
+              {selectedPosition ? 'Enter' : '位置を選択してください'}
+            </button>
+
+            <button
+              type="button"
+              disabled={!sessionId}
+              onClick={async () => {
+                if (!sessionId) return
+                await endSession(sessionId)
+                router.replace('/history')
+              }}
+              style={{
+                padding: '10px 22px', 
+                borderRadius: 10,
+                background: '#2a2a2a', 
+                color: '#eee', 
+                border: '1px solid #555',
+                fontWeight: 800, 
+                cursor: 'pointer',
+                WebkitTapHighlightColor: 'transparent', 
+                WebkitAppearance: 'none', 
+                touchAction: 'manipulation'
+              }}
+            >
+              End Session
             </button>
           </div>
-          
-          <FreePositionCourt
-            width={340}
-            mode="select"
-            selectedPosition={selectedPosition}
-            onPositionSelect={handlePositionSelect}
-            onFreePosition={handleFreePosition}
-            flipY={true}
-            showFixedSpots={showFixedSpots}
-          />
+        </>
+      )}
+
+      {/* 動画アップロードモード */}
+      {recordingMode === 'video' && (
+        <div style={{
+          marginTop: 32,
+          textAlign: 'center',
+          padding: 32,
+          border: '2px dashed #555',
+          borderRadius: 12,
+          background: '#2a2a2a'
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📹</div>
+          <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>動画アップロード</div>
+          <div style={{ color: '#9aa', marginBottom: 24, lineHeight: 1.5 }}>
+            バスケットボールの練習動画をアップロードして<br />
+            自動でシュートを検出・記録します
+          </div>
+          <button
+            type="button"
+            style={{
+              padding: '12px 32px',
+              borderRadius: 10,
+              background: '#0ea5e9',
+              color: '#fff',
+              border: 'none',
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: 'pointer',
+              WebkitTapHighlightColor: 'transparent',
+              WebkitAppearance: 'none',
+              touchAction: 'manipulation'
+            }}
+            onClick={() => setShowVideoUpload(true)}
+          >
+            動画を選択
+          </button>
+          <div style={{ 
+            marginTop: 16, 
+            fontSize: 12, 
+            color: '#777',
+            lineHeight: 1.4 
+          }}>
+            対応形式: MP4, MOV, AVI<br />
+            最大サイズ: 1000MB、最大時間: 20分
+          </div>
         </div>
-      </div>
-
-      {/* Attempt / Make：直接入力（text+numeric）＋ ± */}
-      <div style={{ 
-        marginTop: 16, 
-        display: 'grid', 
-        gap: 12, 
-        width: '100%', 
-        maxWidth: 360, 
-        marginInline: 'auto' 
-      }}>
-        <Row
-          label="Attempt"
-          value={attemptsStr}
-          onChange={(raw) => setAttemptsStr(normalizeNumString(raw))}
-          onMinus={() => setAttemptsStr(v => incStr(v, -1))}
-          onPlus={() => setAttemptsStr(v => incStr(v, +1))}
-        />
-        <Row
-          label="Make"
-          value={makesStr}
-          onChange={(raw) => setMakesStr(normalizeNumString(raw))}
-          onMinus={() => setMakesStr(v => incStr(v, -1))}
-          onPlus={() => setMakesStr(v => incStr(v, +1))}
-        />
-      </div>
-
-      {/* Enter / End Session */}
-      <div style={{ 
-        marginTop: 16, 
-        textAlign: 'center', 
-        display: 'grid', 
-        gap: 10, 
-        width: 220, 
-        marginInline: 'auto' 
-      }}>
-        <button
-          type="button"
-          disabled={!canSave}
-          onClick={save}
-          style={{
-            padding: '12px 24px', 
-            borderRadius: 10,
-            background: canSave ? '#0ea5e9' : '#2b4a58',
-            color: '#dff3ff', 
-            border: '1px solid #2aa3e0',
-            fontWeight: 800, 
-            cursor: canSave ? 'pointer' : 'not-allowed',
-            WebkitTapHighlightColor: 'transparent', 
-            WebkitAppearance: 'none', 
-            touchAction: 'manipulation',
-            fontSize: 16
-          }}
-        >
-          {selectedPosition ? 'Enter' : '位置を選択してください'}
-        </button>
-
-        <button
-          type="button"
-          disabled={!sessionId}
-          onClick={async () => {
-            if (!sessionId) return
-            await endSession(sessionId)
-            router.replace('/history')
-          }}
-          style={{
-            padding: '10px 22px', 
-            borderRadius: 10,
-            background: '#2a2a2a', 
-            color: '#eee', 
-            border: '1px solid #555',
-            fontWeight: 800, 
-            cursor: 'pointer',
-            WebkitTapHighlightColor: 'transparent', 
-            WebkitAppearance: 'none', 
-            touchAction: 'manipulation'
-          }}
-        >
-          End Session
-        </button>
-      </div>
+      )}
     </main>
   )
 }
