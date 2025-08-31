@@ -62,7 +62,6 @@ export function useHorizontalSwipe({
         tracking = true
         pulled = 0
         direction = null
-        // touchActionは方向確定後に設定
       }
 
       const move = (x: number, y: number) => {
@@ -74,8 +73,13 @@ export function useHorizontalSwipe({
         
         // 方向未確定の場合のみ判定を行う
         if (!direction) {
+          // 縦方向の動きが大きく、明らかに縦スクロール意図の場合は早期キャンセル
+          if (dy > 30 && dy > adx * 2.5) {
+            cancel()
+            return
+          }
           // 明確な横スワイプ意図がある場合（横方向が大きく、縦方向が小さい）
-          if (adx > 40 && adx > dy * 2) {
+          else if (adx > 35 && adx > dy * 1.8) {
             direction = dx > 0 ? 'left' : 'right'
             
             // 隣接画面がない場合はキャンセル
@@ -86,11 +90,6 @@ export function useHorizontalSwipe({
             
             // 横スワイプ確定後にtouchActionを設定
             phone.style.touchAction = 'none'
-          }
-          // 縦方向の動きが大きく、明らかに縦スクロール意図の場合はキャンセル
-          else if (dy > 50 && dy > adx * 3) {
-            cancel()
-            return
           }
           // それ以外の場合はまだ判定しない（縦スクロールを許可）
         }
