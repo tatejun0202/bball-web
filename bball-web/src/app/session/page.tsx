@@ -41,7 +41,7 @@ export default function SessionPageV2() {
   
   // 動画解析の状態
   const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress | null>(null)
-  const [analysisResults, setAnalysisResults] = useState<ShotDetection[] | null>(null)
+  // const [analysisResults, setAnalysisResults] = useState<ShotDetection[] | null>(null)
   
   // 選択中の位置情報
   const [selectedPosition, setSelectedPosition] = useState<PositionInfo | null>(null)
@@ -224,7 +224,7 @@ export default function SessionPageV2() {
       console.log('Analysis completed:', analysisResult)
       
       // 解析結果を保存
-      setAnalysisResults(analysisResult.shots)
+      // setAnalysisResults(analysisResult.shots)
       
       // 新しいセッションを作成して結果を保存
       await saveAnalysisResults(analysisResult.shots, result.duration)
@@ -252,7 +252,7 @@ export default function SessionPageV2() {
   }
 
   // 解析結果をデータベースに保存
-  const saveAnalysisResults = async (shots: ShotDetection[], durationMinutes: number) => {
+  const saveAnalysisResults = async (shots: ShotDetection[], _durationMinutes: number) => {
     if (!sessionId || shots.length === 0) return
 
     try {
@@ -371,9 +371,7 @@ export default function SessionPageV2() {
                       <div style={{
                         width: `${analysisProgress.progress}%`,
                         height: '100%',
-                        background: analysisProgress.stage === 'error' 
-                          ? 'linear-gradient(90deg, #ef4444, #dc2626)'
-                          : 'linear-gradient(90deg, #0ea5e9, #06b6d4)',
+                        background: 'linear-gradient(90deg, #0ea5e9, #06b6d4)',
                         borderRadius: 4,
                         transition: 'width 0.3s ease'
                       }} />

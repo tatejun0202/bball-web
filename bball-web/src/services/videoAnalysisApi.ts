@@ -39,7 +39,7 @@ export interface AnalysisResult {
   metadata: {
     frames_processed: number
     processing_time: string
-    [key: string]: any
+    [key: string]: unknown
   }
 }
 
@@ -160,7 +160,12 @@ export class VideoAnalysisApi {
 
   async testConnection(): Promise<{
     connected: boolean
-    serverInfo?: any
+    serverInfo?: {
+      message?: string
+      opencv_version?: string
+      numpy_version?: string
+      [key: string]: unknown
+    }
     error?: string
   }> {
     try {
