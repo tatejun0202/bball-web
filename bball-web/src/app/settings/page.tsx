@@ -4,7 +4,7 @@ import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { db } from '@/db/dexie'
 
 export default function SettingsPage() {
-  useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 })
+  // useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 }) // 一時無効化
 
   // 全履歴削除機能
   const handleDeleteAllHistory = async () => {

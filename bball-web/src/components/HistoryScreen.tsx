@@ -17,7 +17,7 @@ const mins = (s:Session) => Math.max(1, Math.floor(((s.endedAt ?? Date.now()) - 
 export default function HistoryScreenV2() {
   const router = useRouter()
   const [items, setItems] = useState<Array<Session & { att:number; mk:number; fg:number }>>([])
-  useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 })
+  // useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 }) // 一時無効化
   
   const load = useCallback(async () => {
     const ss = await listSessions()

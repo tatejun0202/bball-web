@@ -27,7 +27,7 @@ const normalizeNumString = (s: string) => s.replace(/[^\d]/g, '')
 
 export default function SessionPageV2() {
   const router = useRouter()
-  useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 })
+  // useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 }) // 一時無効化
 
   const [sessionId, setSessionId] = useState<number>()
   const [zones, setZones] = useState<Zone[]>([])

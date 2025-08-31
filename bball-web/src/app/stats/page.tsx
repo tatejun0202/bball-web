@@ -17,7 +17,7 @@ import StatsCharts from '@/components/StatsCharts'
 import StatsHeatmap from '@/components/StatsHeatmap'
 
 export default function StatsPage() {
-  useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 })
+  // useHorizontalSwipe({ threshold: 80, maxPull: 160, flingMs: 220 }) // 一時無効化
 
   const [loading, setLoading] = useState(true)
   const [selectedTab, setSelectedTab] = useState<'overview' | 'trends' | 'heatmap'>('overview')
