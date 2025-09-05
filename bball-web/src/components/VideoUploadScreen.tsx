@@ -24,6 +24,7 @@ export default function VideoUploadScreen({ onUploadComplete, onBack }: VideoUpl
   } | null>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   const preprocessor = useRef(new VideoPreprocessor())
 
   const handleFileSelect = async (file: File) => {
@@ -256,15 +257,41 @@ export default function VideoUploadScreen({ onUploadComplete, onBack }: VideoUpl
             対応形式: MP4, MOV, AVI<br />
             最大サイズ: 1000MB、最大時間: 20分
           </div>
-          
+
           <input
             ref={fileInputRef}
             type="file"
-            accept="video/mp4,video/mov,video/quicktime,video/avi"
+            accept="video/*"
+            onChange={handleFileInputChange}
+            style={{ display: 'none' }}
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="video/*"
+            capture="environment"
             onChange={handleFileInputChange}
             style={{ display: 'none' }}
           />
         </div>
+        <button
+          onClick={() => cameraInputRef.current?.click()}
+          style={{
+            display: 'block',
+            width: '100%',
+            padding: '12px 24px',
+            background: 'none',
+            color: '#0ea5e9',
+            border: '1px solid #0ea5e9',
+            borderRadius: 8,
+            fontSize: 16,
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginTop: 16
+          }}
+        >
+          カメラで撮影
+        </button>
       ) : (
         /* ファイル確認・処理開始エリア */
         <div style={{
