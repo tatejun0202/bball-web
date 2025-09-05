@@ -227,7 +227,7 @@ export default function SessionPageV2() {
       // setAnalysisResults(analysisResult.shots)
       
       // 新しいセッションを作成して結果を保存
-      await saveAnalysisResults(analysisResult.shots, result.duration)
+      await saveAnalysisResults(analysisResult.shots)
       
       setShowVideoUpload(false)
       setAnalysisProgress(null)
@@ -252,7 +252,7 @@ export default function SessionPageV2() {
   }
 
   // 解析結果をデータベースに保存
-  const saveAnalysisResults = async (shots: ShotDetection[], _durationMinutes: number) => {
+  const saveAnalysisResults = async (shots: ShotDetection[]) => {
     if (!sessionId || shots.length === 0) return
 
     try {
@@ -266,10 +266,13 @@ export default function SessionPageV2() {
 
       // 各ショットをdrillResultとして保存
       for (const shot of shots) {
-        // 正規化座標を実際のコート座標に変換
-        const courtX = shot.position.x * 340 // コート幅
-        const courtY = shot.position.y * 238 // コート高（アスペクト比調整済み）
-        
+        // 解析サーバーからの座標は正規化値(0-1)のため、
+        // ゾーン判定用に実寸へ変換しつつ、保存は正規化値で行う
+        const normX = shot.position.x
+        const normY = shot.position.y
+        const courtX = normX * 340 // コート幅
+        const courtY = normY * 238 // コート高（アスペクト比調整済み）
+
         // エリア判定
         const area = detectArea(courtX, courtY)
         const is3P = area?.is3pt ?? false
@@ -281,7 +284,8 @@ export default function SessionPageV2() {
           zoneId,
           attempts: 1,
           makes: shot.result === 'make' ? 1 : 0,
-          position: { type: 'free', x: courtX, y: courtY }
+          // 保存する座標は0-1の正規化値を使用
+          position: { type: 'free', x: normX, y: normY }
         }
 
         await addDrillResultV2(payload, 'free')

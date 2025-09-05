@@ -260,7 +260,8 @@ export default function VideoUploadScreen({ onUploadComplete, onBack }: VideoUpl
           <input
             ref={fileInputRef}
             type="file"
-            accept="video/mp4,video/mov,video/quicktime,video/avi"
+            accept="video/*"
+            capture="environment"
             onChange={handleFileInputChange}
             style={{ display: 'none' }}
           />
