@@ -11,47 +11,43 @@ interface Props {
 const COURT_RATIO = 1095 / 768
 
 export default function StatsHeatmap({ spotStats, overallStats }: Props) {
-  // 成功率でソートしたスポット
+  // 成功玁E��ソートしたスポッチE
   const sortedSpots = [...spotStats].sort((a, b) => b.fgPercentage - a.fgPercentage)
   
-  // ホットスポット（成功率が平均以上で、十分な試投数があるスポット）
+  // ホットスポット（�E功率が平坁E��上で、十刁E��試投数があるスポット！E
   const hotSpots = spotStats.filter(spot => 
     spot.fgPercentage >= overallStats.overallFgPercentage && 
     spot.totalAttempts >= 10
   )
 
-  // コールドスポット（成功率が平均以下）
+  // コールドスポット（�E功率が平坁E��下！E
   const coldSpots = spotStats.filter(spot => 
     spot.fgPercentage < overallStats.overallFgPercentage && 
     spot.totalAttempts >= 5
   )
 
-  // ヒートマップの色を計算
+  // ヒ�Eト�EチE�Eの色を計箁E
   const getHeatColor = (fgPercentage: number, attempts: number) => {
-    if (attempts < 5) return 'rgba(156, 163, 175, 0.6)' // グレー（データ不足）
-    
-    const intensity = Math.min(fgPercentage / 100, 1)
-    const alpha = Math.min(attempts / 50, 1) * 0.8 + 0.2 // 試投数に応じた透明度
+    if (attempts < 5) return 'rgba(156, 163, 175, 0.6)' // グレー�E�データ不足�E�E    const alpha = Math.min(attempts / 50, 1) * 0.8 + 0.2 // 試投数に応じた透�E度
     
     if (fgPercentage >= 70) {
-      // 緑系（高成功率）
+      // 緑系�E�高�E功率�E�E
       return `rgba(34, 197, 94, ${alpha})`
     } else if (fgPercentage >= 50) {
-      // 黄系（中程度）
+      // 黁E���E�中程度�E�E
       return `rgba(251, 191, 36, ${alpha})`
     } else if (fgPercentage >= 30) {
-      // オレンジ系（低め）
+      // オレンジ系�E�低め�E�E
       return `rgba(249, 115, 22, ${alpha})`
     } else {
-      // 赤系（低成功率）
+      // 赤系�E�低�E功率�E�E
       return `rgba(239, 68, 68, ${alpha})`
     }
   }
 
-  // サイズを計算（試投数に基づく）
+  // サイズを計算（試投数に基づく！E
   const getSpotSize = (attempts: number) => {
     const baseSize = 20
-    const maxSize = 40
     const sizeMultiplier = Math.min(attempts / 30, 2)
     return Math.max(baseSize, baseSize * sizeMultiplier)
   }
@@ -59,9 +55,9 @@ export default function StatsHeatmap({ spotStats, overallStats }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-      {/* ヒートマップ */}
+      {/* ヒ�Eト�EチE�E */}
       <section>
-        <SectionTitle>ヒートマップ</SectionTitle>
+        <SectionTitle>ヒ�Eト�EチE�E</SectionTitle>
         <div style={{ width: 340, margin: '0 auto', marginBottom: 16 }}>
           <div style={{
             position: 'relative',
@@ -72,7 +68,7 @@ export default function StatsHeatmap({ spotStats, overallStats }: Props) {
             borderRadius: 8,
             background: '#1a1a1a'
           }}>
-            {/* コート画像 */}
+            {/* コート画僁E*/}
             <Image
               src="/court.png"
               alt="court"
@@ -86,7 +82,7 @@ export default function StatsHeatmap({ spotStats, overallStats }: Props) {
               }}
             />
 
-            {/* ヒートマップドット */}
+            {/* ヒ�Eト�EチE�EドッチE*/}
             {spotStats.map((spot) => {
               const size = getSpotSize(spot.totalAttempts)
               const color = getHeatColor(spot.fgPercentage, spot.totalAttempts)
@@ -121,7 +117,7 @@ export default function StatsHeatmap({ spotStats, overallStats }: Props) {
           </div>
         </div>
 
-        {/* 凡例 */}
+        {/* 凡侁E*/}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center', 
@@ -134,14 +130,14 @@ export default function StatsHeatmap({ spotStats, overallStats }: Props) {
           <LegendItem color="rgba(251, 191, 36, 0.8)" label="50-69%" />
           <LegendItem color="rgba(249, 115, 22, 0.8)" label="30-49%" />
           <LegendItem color="rgba(239, 68, 68, 0.8)" label="~29%" />
-          <LegendItem color="rgba(156, 163, 175, 0.6)" label="データ不足" />
+          <LegendItem color="rgba(156, 163, 175, 0.6)" label="チE�Eタ不足" />
         </div>
       </section>
 
-      {/* ホットスポット */}
+      {/* ホットスポッチE*/}
       {hotSpots.length > 0 && (
         <section>
-          <SectionTitle>🔥 ホットスポット</SectionTitle>
+          <SectionTitle>🔥 ホットスポッチE/SectionTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {hotSpots.map((spot) => (
               <SpotCard 
@@ -157,15 +153,15 @@ export default function StatsHeatmap({ spotStats, overallStats }: Props) {
             marginTop: 8,
             textAlign: 'center'
           }}>
-            平均成功率（{overallStats.overallFgPercentage.toFixed(1)}%）以上で10回以上の試投があるスポット
+            平坁E�E功率�E�EoverallStats.overallFgPercentage.toFixed(1)}%�E�以上で10回以上�E試投があるスポッチE
           </div>
         </section>
       )}
 
-      {/* コールドスポット */}
+      {/* コールドスポッチE*/}
       {coldSpots.length > 0 && (
         <section>
-          <SectionTitle>🧊 改善の余地があるスポット</SectionTitle>
+          <SectionTitle>🧁E改喁E�E余地があるスポッチE/SectionTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {coldSpots.map((spot) => (
               <SpotCard 
@@ -181,7 +177,7 @@ export default function StatsHeatmap({ spotStats, overallStats }: Props) {
             marginTop: 8,
             textAlign: 'center'
           }}>
-            平均成功率以下のスポット。練習を重ねて改善を目指しましょう
+            平坁E�E功率以下�Eスポット。練習を重�Eて改喁E��目持E��ましょぁE
           </div>
         </section>
       )}
@@ -227,7 +223,7 @@ export default function StatsHeatmap({ spotStats, overallStats }: Props) {
                     }}>3P</span>}
                   </div>
                   <div style={{ fontSize: 10, color: '#9aa' }}>
-                    {spot.totalMakes}/{spot.totalAttempts} • {spot.sessions}セッション
+                    {spot.totalMakes}/{spot.totalAttempts} • {spot.sessions}セチE��ョン
                   </div>
                 </div>
               </div>
@@ -298,7 +294,7 @@ function SpotCard({
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ fontSize: 20 }}>
-          {isHot ? '🔥' : '🧊'}
+          {isHot ? '🔥' : '🧁E}
         </div>
         <div>
           <div style={{ 
@@ -319,7 +315,7 @@ function SpotCard({
             }}>3P</span>}
           </div>
           <div style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.8)' }}>
-            {spot.totalMakes}/{spot.totalAttempts} • {spot.sessions}セッション
+            {spot.totalMakes}/{spot.totalAttempts} • {spot.sessions}セチE��ョン
           </div>
         </div>
       </div>

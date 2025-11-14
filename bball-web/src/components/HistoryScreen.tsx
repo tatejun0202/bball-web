@@ -1,6 +1,5 @@
 // src/components/HistoryScreen.tsx (V2版)
 'use client'
-import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { listSessions, getSessionSummary, startSession, endSession } from '@/db/repositories'

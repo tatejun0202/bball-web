@@ -3,6 +3,10 @@ import { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { type OverallStats, type SessionStats, type SpotStats } from '@/db/stats-repositories'
 
+type OverallStatsWithOptionalFt = OverallStats & {
+  overallFtPercentage?: number
+}
+
 interface Props {
   overallStats: OverallStats
   sessionsStats: SessionStats[]
@@ -11,6 +15,11 @@ interface Props {
 
 export default function StatsOverview({ overallStats, sessionsStats, spotStats }: Props) {
   const router = useRouter()
+  const statsWithFt = overallStats as OverallStatsWithOptionalFt
+  const ftPct =
+    typeof statsWithFt.overallFtPercentage === 'number'
+      ? statsWithFt.overallFtPercentage
+      : undefined
 
   const averageStats = [
     { label: 'FG%', value: overallStats.overallFgPercentage.toFixed(1) },
@@ -18,10 +27,7 @@ export default function StatsOverview({ overallStats, sessionsStats, spotStats }
     { label: '2FG%', value: overallStats.overall2PPercentage.toFixed(1) },
     {
       label: 'FT%',
-      value:
-        (overallStats as any).overallFtPercentage !== undefined
-          ? (overallStats as any).overallFtPercentage.toFixed(1)
-          : '-',
+      value: ftPct !== undefined ? ftPct.toFixed(1) : '-',
     },
     { label: 'TS%', value: overallStats.overallEfgPercentage.toFixed(1) },
   ]

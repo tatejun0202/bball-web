@@ -1,7 +1,6 @@
 // src/app/stats/page.tsx
 'use client'
 import { useEffect, useState } from 'react'
-import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { 
   getAllSessionsStats, 
   getOverallStats, 
