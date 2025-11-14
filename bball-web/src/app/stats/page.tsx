@@ -126,15 +126,9 @@ export default function StatsPage() {
           alignItems: 'center',
           gap: 12
         }}>
-          <span>{overallStats.totalSessions} セッション</span>
+          <span>{overallStats.totalSessions} Session</span>
           <span>•</span>
-          <span>{Math.round(overallStats.totalMinutes / 60 * 10) / 10} 時間</span>
-          <span>•</span>
-          <span className={`trend-${overallStats.recentTrend}`}>
-            {overallStats.recentTrend === 'improving' && '📈 上昇傾向'}
-            {overallStats.recentTrend === 'declining' && '📉 下降傾向'}
-            {overallStats.recentTrend === 'stable' && '➡️ 安定'}
-          </span>
+          <span>{Math.round(overallStats.totalMinutes / 60 * 10) / 10} Hours</span>
         </div>
       </div>
 
@@ -145,9 +139,9 @@ export default function StatsPage() {
         marginBottom: 16
       }}>
         {[
-          { key: 'overview', label: '概要', icon: '📊' },
-          { key: 'trends', label: '推移', icon: '📈' },
-          { key: 'heatmap', label: 'ヒート', icon: '🎯' }
+          { key: 'overview', label: 'Overview', icon: '📊' },
+          { key: 'trends', label: 'Trends', icon: '📈' },
+          { key: 'heatmap', label: 'Heat', icon: '🎯' }
         ].map(tab => (
           <button
             key={tab.key}

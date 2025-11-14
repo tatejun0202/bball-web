@@ -1,5 +1,6 @@
-// src/components/StatsOverview.tsx
 'use client'
+import { useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { type OverallStats, type SessionStats, type SpotStats } from '@/db/stats-repositories'
 
 interface Props {
@@ -9,284 +10,309 @@ interface Props {
 }
 
 export default function StatsOverview({ overallStats, sessionsStats, spotStats }: Props) {
-  // ベストスポット（成功率が高く、十分な試投数があるスポット）
-  const bestSpots = spotStats
-    .filter(spot => spot.totalAttempts >= 10) // 最低10回以上
-    .sort((a, b) => b.fgPercentage - a.fgPercentage)
-    .slice(0, 3)
+  const router = useRouter()
 
-  // 最近のセッション（直近5つ）
-  const recentSessions = sessionsStats.slice(0, 5)
+  const averageStats = [
+    { label: 'FG%', value: overallStats.overallFgPercentage.toFixed(1) },
+    { label: '3FG%', value: overallStats.overall3PPercentage.toFixed(1) },
+    { label: '2FG%', value: overallStats.overall2PPercentage.toFixed(1) },
+    {
+      label: 'FT%',
+      value:
+        (overallStats as any).overallFtPercentage !== undefined
+          ? (overallStats as any).overallFtPercentage.toFixed(1)
+          : '-',
+    },
+    { label: 'TS%', value: overallStats.overallEfgPercentage.toFixed(1) },
+  ]
+
+  const pointsPerSession =
+    overallStats.totalSessions > 0 ? overallStats.totalPoints / overallStats.totalSessions : 0
+
+  const totalStats = [
+    { label: 'Points', value: overallStats.totalPoints.toLocaleString() },
+    { label: 'Attempts', value: overallStats.totalAttempts.toLocaleString() },
+    {
+      label: 'Points/Session',
+      value: pointsPerSession.toFixed(1),
+    },
+    { label: 'Attempts/Session', value: overallStats.averageAttemptsPerSession.toFixed(1) },
+  ]
+
+  // ベストパフォーマンスは得点/時間（効率）優先、同率ならFG%で比較
+  const bestPerformanceSession = useMemo(() => {
+    return (
+      sessionsStats.reduce<{
+        session: SessionStats
+        pointsPerMinute: number
+        fg: number
+      } | null>((best, session) => {
+        const minutes = Math.max(1, session.minutes)
+        const pointsPerMinute = minutes > 0 ? session.points / minutes : 0
+        const fg = session.fgPercentage
+
+        if (!best) {
+          return { session, pointsPerMinute, fg }
+        }
+
+        if (pointsPerMinute > best.pointsPerMinute) {
+          return { session, pointsPerMinute, fg }
+        }
+
+        if (pointsPerMinute === best.pointsPerMinute && fg > best.fg) {
+          return { session, pointsPerMinute, fg }
+        }
+
+        return best
+      }, null)?.session ?? null
+    )
+  }, [sessionsStats])
+
+  const fallbackSpot = useMemo(() => {
+    return (
+      spotStats
+        .filter(spot => spot.totalAttempts >= 10)
+        .sort((a, b) => b.fgPercentage - a.fgPercentage)[0] ?? null
+    )
+  }, [spotStats])
+
+  const bestPerformanceDate = bestPerformanceSession?.date ?? null
+  const bestPerformanceMetrics = bestPerformanceSession
+    ? [
+        { label: 'MINS', value: bestPerformanceSession.minutes.toString() },
+        {
+          label: 'FG',
+          value: `${bestPerformanceSession.totalMakes}/${bestPerformanceSession.totalAttempts}`,
+        },
+        { label: 'FG%', value: bestPerformanceSession.fgPercentage.toFixed(1) },
+      ]
+    : [
+        { label: 'SESSIONS', value: fallbackSpot ? fallbackSpot.sessions.toString() : '-' },
+        {
+          label: 'FG',
+          value: fallbackSpot
+            ? `${fallbackSpot.totalMakes}/${fallbackSpot.totalAttempts}`
+            : '-',
+        },
+        { label: 'FG%', value: fallbackSpot ? fallbackSpot.fgPercentage.toFixed(1) : '-' },
+      ]
+
+  const handleBestPerformanceClick = () => {
+    if (!bestPerformanceSession) return
+    router.push(`/result/${bestPerformanceSession.sessionId}`)
+  }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      
-      {/* 主要メトリクス */}
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 28,
+        paddingBottom: 24,
+      }}
+    >
+      {/* ---------- Average ---------- */}
       <section>
-        <SectionTitle>主要成績</SectionTitle>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
-          gap: 12,
-          marginBottom: 16
-        }}>
-          <MetricCard
-            value={overallStats.overallFgPercentage.toFixed(1)}
-            unit="%"
-            label="総合FG%"
-            large
-            color="#0ea5e9"
-          />
-          <MetricCard
-            value={overallStats.totalPoints.toString()}
-            label="総得点"
-            large
-            color="#22c55e"
-          />
-        </div>
-        
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr 1fr', 
-          gap: 12
-        }}>
-          <MetricCard
-            value={overallStats.overall2PPercentage.toFixed(1)}
-            unit="%"
-            label="2P成功率"
-            color="#f59e0b"
-          />
-          <MetricCard
-            value={overallStats.overall3PPercentage.toFixed(1)}
-            unit="%"
-            label="3P成功率"
-            color="#8b5cf6"
-          />
-          <MetricCard
-            value={overallStats.overallEfgPercentage.toFixed(1)}
-            unit="%"
-            label="eFG%"
-            color="#06b6d4"
-          />
+        <SectionTitle>Average</SectionTitle>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 16,
+            rowGap: 22,
+          }}
+        >
+          {averageStats.map(stat => (
+            <AverageItem key={stat.label} label={stat.label} value={stat.value} />
+          ))}
         </div>
       </section>
 
-      {/* 練習量統計 */}
+      {/* ---------- Total ---------- */}
       <section>
-        <SectionTitle>練習量</SectionTitle>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
-          gap: 12,
-          marginBottom: 16
-        }}>
-          <MetricCard
-            value={(Math.round(overallStats.totalMinutes / 60 * 10) / 10).toString()}
-            unit="時間"
-            label="総練習時間"
-            color="#ec4899"
-          />
-          <MetricCard
-            value={overallStats.totalAttempts.toString()}
-            label="総試投数"
-            color="#10b981"
-          />
-        </div>
-        
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
-          gap: 12
-        }}>
-          <MetricCard
-            value={Math.round(overallStats.averageAttemptsPerSession).toString()}
-            label="平均試投数/セッション"
-            color="#6366f1"
-          />
-          <MetricCard
-            value={Math.round(overallStats.averageMakesPerSession).toString()}
-            label="平均成功数/セッション"
-            color="#84cc16"
-          />
+        <SectionTitle>Total</SectionTitle>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 18,
+          }}
+        >
+          {totalStats.map(stat => (
+            <TotalItem key={stat.label} label={stat.label} value={stat.value} />
+          ))}
         </div>
       </section>
 
-      {/* ベストスポット */}
-      {bestSpots.length > 0 && (
-        <section>
-          <SectionTitle>得意スポット TOP3</SectionTitle>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {bestSpots.map((spot, index) => (
-              <div key={spot.spotId} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 16px',
-                background: '#252525',
-                borderRadius: 8,
-                border: index === 0 ? '1px solid #fbbf24' : '1px solid #374151'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    background: index === 0 ? '#fbbf24' : index === 1 ? '#9ca3af' : '#cd7c2f',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: '#000'
-                  }}>
-                    {index + 1}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{spot.spotLabel}</div>
-                    <div style={{ fontSize: 11, color: '#9aa' }}>
-                      {spot.totalMakes}/{spot.totalAttempts} 
-                      {spot.is3pt ? ' (3P)' : ' (2P)'}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ 
-                  fontSize: 18, 
+      {/* ---------- Best Performance ---------- */}
+      <section>
+        <SectionTitle>Best Performance</SectionTitle>
+
+        <button
+          type="button"
+          onClick={handleBestPerformanceClick}
+          disabled={!bestPerformanceSession}
+          style={{
+            width: '100%',
+            padding: '0 4px',
+            background: 'none',
+            border: 'none',
+            color: 'inherit',
+            textAlign: 'left',
+            cursor: bestPerformanceSession ? 'pointer' : 'default',
+            WebkitTapHighlightColor: 'transparent',
+            WebkitAppearance: 'none',
+            touchAction: 'manipulation',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 12,
+              marginBottom: 12,
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
+                  textTransform: 'uppercase',
+                  color: '#cfcfcf',
+                  marginBottom: 4,
+                }}
+              >
+                {bestPerformanceSession ? 'Session' : 'Spot'}
+              </div>
+              <div
+                style={{
+                  fontSize: 20,
                   fontWeight: 800,
-                  color: index === 0 ? '#fbbf24' : '#ddd'
-                }}>
-                  {spot.fgPercentage.toFixed(1)}%
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ベストセッション */}
-      {overallStats.bestSession && (
-        <section>
-          <SectionTitle>ベストセッション</SectionTitle>
-          <div style={{
-            padding: '16px',
-            background: 'linear-gradient(135deg, #1e40af, #3b82f6)',
-            borderRadius: 12,
-            border: '1px solid #3b82f6'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#dbeafe' }}>
-                  {overallStats.bestSession.title}
-                </div>
-                <div style={{ fontSize: 12, color: '#bfdbfe', marginTop: 2 }}>
-                  {overallStats.bestSession.date}
-                </div>
-              </div>
-              <div style={{ 
-                fontSize: 24, 
-                fontWeight: 800,
-                color: '#fff'
-              }}>
-                {overallStats.bestSession.fgPercentage.toFixed(1)}%
+                }}
+              >
+                {bestPerformanceSession?.sessionTitle ?? fallbackSpot?.spotLabel ?? '---'}
               </div>
             </div>
+            <div style={{ fontSize: 26, color: '#b8b8b8' }}>›</div>
           </div>
-        </section>
-      )}
 
-      {/* 最近のセッション */}
-      {recentSessions.length > 0 && (
-        <section>
-          <SectionTitle>最近のセッション</SectionTitle>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {recentSessions.map((session, index) => (
-              <div key={session.sessionId} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 16px',
-                background: index === 0 ? '#1e293b' : '#1f2937',
-                borderRadius: 8,
-                border: index === 0 ? '1px solid #0ea5e9' : '1px solid #374151'
-              }}>
-                <div>
-                  <div style={{ 
-                    fontSize: 14, 
-                    fontWeight: 600,
-                    color: index === 0 ? '#0ea5e9' : '#ddd'
-                  }}>
-                    {session.sessionTitle}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#9aa', marginTop: 2 }}>
-                    {session.date} • {session.totalMakes}/{session.totalAttempts} • {session.points}pts
-                  </div>
-                </div>
-                <div style={{ 
-                  fontSize: 16, 
-                  fontWeight: 700,
-                  color: index === 0 ? '#0ea5e9' : '#ddd'
-                }}>
-                  {session.fgPercentage.toFixed(1)}%
-                </div>
-              </div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 16,
+            }}
+          >
+            {bestPerformanceMetrics.map(metric => (
+              <BestMetric key={metric.label} value={metric.value} label={metric.label} />
             ))}
           </div>
-        </section>
-      )}
-      
+
+          {bestPerformanceDate && (
+            <div
+              style={{
+                marginTop: 12,
+                fontSize: 12,
+                color: '#a0a0a0',
+              }}
+            >
+              {bestPerformanceDate}
+            </div>
+          )}
+        </button>
+      </section>
     </div>
   )
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 style={{
-      fontSize: 16,
-      fontWeight: 700,
-      marginBottom: 12,
-      color: '#ddd',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8
-    }}>
+    <h2
+      style={{
+        fontSize: 18,
+        fontWeight: 800,
+        margin: 0,
+        marginBottom: 12,
+      }}
+    >
       {children}
     </h2>
   )
 }
 
-function MetricCard({ 
-  value, 
-  unit, 
-  label, 
-  large, 
-  color = '#9aa' 
-}: {
-  value: string
-  unit?: string
-  label: string
-  large?: boolean
-  color?: string
-}) {
+function AverageItem({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{
-      padding: large ? '16px' : '12px',
-      background: '#252525',
-      borderRadius: 8,
-      border: '1px solid #374151',
-      textAlign: 'center'
-    }}>
-      <div style={{ 
-        fontSize: large ? 28 : 20, 
-        fontWeight: 800,
-        color,
-        lineHeight: 1
-      }}>
-        {value}{unit && <span style={{ fontSize: large ? 18 : 14 }}>{unit}</span>}
+    <div style={{ textAlign: 'center' }}>
+      <div
+        style={{
+          fontSize: 12,
+          color: '#9a9a9a',
+          marginBottom: 6,
+        }}
+      >
+        {label}
       </div>
-      <div style={{ 
-        fontSize: large ? 13 : 11, 
-        color: '#9aa',
-        marginTop: 4
-      }}>
+      <div
+        style={{
+          fontSize: 32,
+          fontWeight: 800,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function TotalItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div
+        style={{
+          fontSize: 12,
+          color: '#9a9a9a',
+          marginBottom: 6,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 32,
+          fontWeight: 800,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function BestMetric({ value, label }: { value: string; label: string }) {
+  return (
+    <div style={{ flex: 1, textAlign: 'center' }}>
+      <div
+        style={{
+          fontSize: 32,
+          fontWeight: 800,
+        }}
+      >
+        {value}
+      </div>
+      <div
+        style={{
+          fontSize: 11,
+          color: '#9a9a9a',
+          marginTop: 4,
+          letterSpacing: 1,
+        }}
+      >
         {label}
       </div>
     </div>
